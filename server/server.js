@@ -30,12 +30,32 @@ if (!MONGO_URI) {
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    console.log('✅ Connected to MongoDB successfully');
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   })
   .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    console.error('Make sure MongoDB is running and MONGO_URI is correct in .env file');
+    console.error('❌ MongoDB connection error:', err.message);
+    
+    // Provide specific guidance based on error type
+    if (err.code === 8000 || err.codeName === 'AtlasError') {
+      console.error('\n📋 MongoDB Atlas Authentication Failed. Please check:');
+      console.error('   1. Username and password in MONGO_URI are correct');
+      console.error('   2. Database user exists and has proper permissions');
+      console.error('   3. Your IP address is whitelisted in MongoDB Atlas Network Access');
+      console.error('   4. Connection string format: mongodb+srv://username:password@cluster.mongodb.net/dbname');
+    } else if (err.message.includes('ECONNREFUSED')) {
+      console.error('\n📋 Local MongoDB Connection Failed. Please check:');
+      console.error('   1. MongoDB is installed and running');
+      console.error('   2. MongoDB is running on port 27017');
+      console.error('   3. Connection string: mongodb://localhost:27017/wellness_db');
+    } else {
+      console.error('\n📋 MongoDB Connection Failed. Please check:');
+      console.error('   1. MONGO_URI in .env file is correct');
+      console.error('   2. MongoDB service is running');
+      console.error('   3. Network connectivity');
+    }
+    
+    console.error('\n💡 See .env.example for connection string format');
     process.exit(1);
   });
 

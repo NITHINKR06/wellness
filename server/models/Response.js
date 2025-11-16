@@ -6,10 +6,11 @@ const ResponseSchema = new mongoose.Schema({
   sleepHours: { type: Number, required: true, default: 0 },
   appetite: { type: Boolean, required: true },
   mood: { type: Boolean, required: true },
-  support: { type: Boolean, required: true }, // true = adequate support
+  support: { type: Boolean, required: false }, // true = adequate support, false = lack of support, null/undefined = not answered
   history: { type: Boolean, required: true },
   resultLabel: { type: String, required: true },
   score: { type: Number, required: true },
+  deleted: { type: Boolean, default: false }, // Soft delete flag
   createdAt: { type: Date, default: Date.now }
 });
 

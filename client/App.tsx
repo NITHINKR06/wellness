@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, TouchableOpacity, Text, SafeAreaView, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Text, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import HomeScreen from './src/screens/HomeScreen';
 import QuestionnaireScreen from './src/screens/QuestionnaireScreen';
 import ResultsScreen from './src/screens/ResultsScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import { AssessmentResult } from './src/models/result';
 import { submitQuestionnaire, fetchAllResponses } from './src/utils/api';
 
-type Screen = 'questionnaire' | 'results';
+type Screen = 'home' | 'questionnaire' | 'results';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [currentScreen, setCurrentScreen] = useState<Screen>('questionnaire');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [resultsHistory, setResultsHistory] = useState<AssessmentResult[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,40 +44,70 @@ export default function App() {
   }, []);
 
   // Handle submission from questionnaire
+  // All data must be saved to MongoDB - no local fallback
   const handleSubmit = async (result: AssessmentResult) => {
     setIsSubmitting(true);
     try {
-      // Submit to backend
+      // Submit to backend (MongoDB) - this is the only source of truth
       const savedResult = await submitQuestionnaire(result);
       
-      // Update local state with the saved result from backend
+      // Only update local state after successful MongoDB save
       setResultsHistory((prev) => [savedResult, ...prev]);
       
-      // Automatically navigate to results screen after submission
+      // Automatically navigate to results screen after successful submission
       setCurrentScreen('results');
     } catch (error) {
-      console.error('Failed to submit questionnaire:', error);
+      console.error('Failed to submit questionnaire to MongoDB:', error);
       Alert.alert(
-        'Submission Error',
-        'Failed to submit questionnaire. Please check your connection and try again.',
-        [{ text: 'OK' }]
+        'Submission Failed',
+        'Your questionnaire could not be saved to the database. Please check your internet connection and try again. Your data will not be saved until submission succeeds.',
+        [
+          { 
+            text: 'Retry', 
+            onPress: () => handleSubmit(result),
+            style: 'default'
+          },
+          { 
+            text: 'Cancel', 
+            style: 'cancel'
+          }
+        ]
       );
-      // Still add to local state as fallback
-      setResultsHistory((prev) => [result, ...prev]);
-      setCurrentScreen('results');
+      // Do NOT add to local state - data must be in MongoDB first
+      // User stays on questionnaire screen to retry
+      // Rethrow error so form doesn't reset
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Navigate to home screen
+  const handleNavigateToHome = () => {
+    setCurrentScreen('home');
+  };
+
+  // Navigate to questionnaire screen
+  const handleNavigateToQuestionnaire = () => {
+    setCurrentScreen('questionnaire');
+  };
+
   // Navigate to results screen
-  const handleViewResults = () => {
+  const handleNavigateToResults = () => {
     setCurrentScreen('results');
   };
 
-  // Navigate back to questionnaire
-  const handleBackToQuestionnaire = () => {
-    setCurrentScreen('questionnaire');
+  // Handle deletion of a response
+  const handleDelete = async (id: string) => {
+    try {
+      // Refresh the list from backend (which will exclude deleted items)
+      const responses = await fetchAllResponses();
+      setResultsHistory(responses);
+    } catch (error) {
+      console.error('Failed to refresh results after deletion:', error);
+      // Remove from local state as fallback
+      setResultsHistory((prev) => prev.filter((r) => r.id !== id));
+    }
   };
 
   // Show loading screen
@@ -85,88 +116,105 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar style="auto" />
       
       {/* Current Screen */}
       <View style={styles.screenContainer}>
-        {currentScreen === 'questionnaire' ? (
+        {currentScreen === 'home' ? (
+          <HomeScreen
+            onNavigateToQuestionnaire={handleNavigateToQuestionnaire}
+            onNavigateToResults={handleNavigateToResults}
+            resultsCount={resultsHistory.length}
+          />
+        ) : currentScreen === 'questionnaire' ? (
           <QuestionnaireScreen onSubmit={handleSubmit} isSubmitting={isSubmitting} />
         ) : (
           <ResultsScreen
             resultsHistory={resultsHistory}
-            onBack={handleBackToQuestionnaire}
+            onBack={handleNavigateToHome}
+            onDelete={handleDelete}
           />
         )}
       </View>
 
-      {/* Bottom Navigation */}
-      <SafeAreaView style={styles.navFooter} edges={['bottom']}>
-        <View style={styles.navContainer}>
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              currentScreen === 'questionnaire' && styles.navButtonActive,
-            ]}
-            onPress={handleBackToQuestionnaire}
-            activeOpacity={0.7}
-          >
-            <Ionicons 
-              name="clipboard-outline" 
-              size={22} 
-              color={currentScreen === 'questionnaire' ? '#6c5ce7' : '#636e72'} 
-            />
-            <Text
-              style={[
-                styles.navButtonText,
-                currentScreen === 'questionnaire' && styles.navButtonTextActive,
-              ]}
+      {/* Bottom Navigation - Only show when not on home screen */}
+      {currentScreen !== 'home' && (
+        <View style={styles.navFooter}>
+          <View style={styles.navContainer}>
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={handleNavigateToHome}
+              activeOpacity={0.7}
             >
-              Questionnaire
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              currentScreen === 'results' && styles.navButtonActive,
-            ]}
-            onPress={handleViewResults}
-            activeOpacity={0.7}
-          >
-            <View style={styles.navButtonContent}>
-              <View style={styles.iconContainer}>
-                <Ionicons 
-                  name="stats-chart" 
-                  size={22} 
-                  color={currentScreen === 'results' ? '#6c5ce7' : '#636e72'} 
-                />
-                {resultsHistory.length > 0 && (
-                  <View style={[
-                    styles.badge,
-                    currentScreen === 'results' && styles.badgeActive
-                  ]}>
-                    <Text style={[
-                      styles.badgeText,
-                      currentScreen === 'results' && styles.badgeTextActive
-                    ]}>
-                      {resultsHistory.length}
-                    </Text>
-                  </View>
-                )}
-              </View>
+              <Ionicons name="home" size={22} color="#636e72" />
+              <Text style={styles.navButtonText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.navButton,
+                currentScreen === 'questionnaire' && styles.navButtonActive,
+              ]}
+              onPress={handleNavigateToQuestionnaire}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name="clipboard-outline" 
+                size={22} 
+                color={currentScreen === 'questionnaire' ? '#6c5ce7' : '#636e72'} 
+              />
               <Text
                 style={[
                   styles.navButtonText,
-                  currentScreen === 'results' && styles.navButtonTextActive,
+                  currentScreen === 'questionnaire' && styles.navButtonTextActive,
                 ]}
               >
-                Results
+                Questionnaire
               </Text>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.navButton,
+                currentScreen === 'results' && styles.navButtonActive,
+              ]}
+              onPress={handleNavigateToResults}
+              activeOpacity={0.7}
+            >
+              <View style={styles.navButtonContent}>
+                <View style={styles.iconContainer}>
+                  <Ionicons 
+                    name="stats-chart" 
+                    size={22} 
+                    color={currentScreen === 'results' ? '#6c5ce7' : '#636e72'} 
+                  />
+                  {resultsHistory.length > 0 && (
+                    <View style={[
+                      styles.badge,
+                      currentScreen === 'results' && styles.badgeActive
+                    ]}>
+                      <Text style={[
+                        styles.badgeText,
+                        currentScreen === 'results' && styles.badgeTextActive
+                      ]}>
+                        {resultsHistory.length}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.navButtonText,
+                    currentScreen === 'results' && styles.navButtonTextActive,
+                  ]}
+                >
+                  Results
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-      </SafeAreaView>
-    </SafeAreaView>
+      )}
+    </View>
   );
 }
 

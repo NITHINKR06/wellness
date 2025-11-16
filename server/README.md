@@ -184,6 +184,45 @@ Find your computer's IP:
   - Verify MongoDB is running (local) or connection string is correct (Atlas)
   - Check firewall isn't blocking port 27017
 
+### MongoDB Atlas Authentication Failed (Error Code 8000)
+
+- **Error**: "bad auth : Authentication failed" or "AtlasError"
+- **Common Causes**:
+  1. **Wrong username/password**: Check your MongoDB Atlas credentials
+  2. **IP not whitelisted**: Add your IP address in MongoDB Atlas → Network Access
+  3. **User doesn't exist**: Create a database user in MongoDB Atlas → Database Access
+  4. **Incorrect connection string format**
+
+- **Solution Steps**:
+  1. **Verify Connection String Format**:
+     ```
+     mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority
+     ```
+     - Replace `<username>` with your MongoDB Atlas username
+     - Replace `<password>` with your MongoDB Atlas password (URL-encode special characters)
+     - Replace `<cluster>` with your cluster name (e.g., `cluster0.xxxxx`)
+     - Replace `<database>` with your database name (e.g., `wellness_db`)
+
+  2. **Check MongoDB Atlas Settings**:
+     - Go to [MongoDB Atlas Dashboard](https://cloud.mongodb.com/)
+     - **Database Access**: Ensure your user exists and has read/write permissions
+     - **Network Access**: Add your current IP address (or `0.0.0.0/0` for all IPs - less secure)
+     - **Clusters**: Verify your cluster is running and get the correct connection string
+
+  3. **URL-encode Special Characters in Password**:
+     - If your password contains special characters like `@`, `#`, `%`, etc., URL-encode them
+     - Example: `@` becomes `%40`, `#` becomes `%23`
+
+  4. **Test Connection String**:
+     - Copy the connection string directly from MongoDB Atlas (click "Connect" → "Connect your application")
+     - Make sure you select the correct database name
+
+  5. **Alternative: Use Local MongoDB**:
+     - If Atlas continues to fail, switch to local MongoDB:
+     ```env
+     MONGO_URI=mongodb://localhost:27017/wellness_db
+     ```
+
 ### Port Already in Use
 
 - **Error**: "Port 4000 already in use"

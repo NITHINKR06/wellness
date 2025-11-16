@@ -38,25 +38,31 @@ const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Map frontend questionnaire responses to backend format
- * Frontend has 8 questions (q1-q8), backend expects 4 specific fields
+ * Frontend has 9 questions (q1-q9), backend expects 4 specific fields
  */
 const mapToBackendFormat = (questionnaireResponses: QuestionnaireResponse) => {
   // Map questions to backend fields:
   // q4 -> appetite (changes in appetite)
-  // q1, q2, q5, q6, q7 -> mood (any mood-related question)
+  // q1, q2, q3, q5, q6, q7 -> mood (any mood-related question, including sleep issues)
   // q8 -> history (thoughts of harming)
-  // support -> default to true (adequate support) or can be derived from context
+  // q9 -> support (inverted: true = adequate support, false = lack of support)
+  // Note: Server counts lack of support (!support) as a risk factor
   
-  const appetite = questionnaireResponses['q4'] || false; // Changes in appetite
+  const appetite = questionnaireResponses['q4'] === true; // Changes in appetite (only true if explicitly answered)
   const mood = !!(
     questionnaireResponses['q1'] || // Feeling sad, anxious, or empty
     questionnaireResponses['q2'] || // Lost interest
+    questionnaireResponses['q3'] || // Sleeping too much or too little (now included)
     questionnaireResponses['q5'] || // Feeling irritable or angry
     questionnaireResponses['q6'] || // Difficulty concentrating
     questionnaireResponses['q7']    // Feeling guilty or worthless
   );
-  const support = true; // Default to adequate support (can be updated if you add a support question)
-  const history = questionnaireResponses['q8'] || false; // Thoughts of harming
+  // Support: only count as false (lack of support) if explicitly answered as false
+  // If not answered (undefined), treat as null/undefined so it doesn't count as a risk factor
+  const support = questionnaireResponses.hasOwnProperty('q9') 
+    ? questionnaireResponses['q9'] === true  // Explicitly answered: true = adequate support
+    : null; // Not answered: don't count as risk factor
+  const history = questionnaireResponses['q8'] === true; // Thoughts of harming (only true if explicitly answered)
 
   return { appetite, mood, support, history };
 };
@@ -78,15 +84,21 @@ const fetchWithTimeout = (url: string, options: RequestInit, timeout = 5000): Pr
  */
 const mapFromBackendFormat = (backendResponse: any): AssessmentResult => {
   // Reconstruct questionnaireResponses from backend fields
-  // This is a simplified mapping - you may want to adjust based on your needs
+  // Note: This is a best-effort reconstruction since we can't perfectly reverse
+  // the OR logic used in mapping multiple questions to a single field
   const questionnaireResponses: QuestionnaireResponse = {
     q4: backendResponse.appetite,
-    q1: backendResponse.mood,
+    q1: backendResponse.mood, // If mood is true, at least one of q1,q2,q3,q5,q6,q7 was true
     q2: backendResponse.mood,
+    q3: backendResponse.mood, // Now included in mood calculation
     q5: backendResponse.mood,
     q6: backendResponse.mood,
     q7: backendResponse.mood,
     q8: backendResponse.history,
+    // Only include q9 if support was explicitly answered (not null)
+    ...(backendResponse.support !== null && backendResponse.support !== undefined && {
+      q9: backendResponse.support // Support question (true = adequate support, false = lack of support)
+    }),
   };
 
   return {
@@ -161,6 +173,28 @@ export const fetchAllResponses = async (): Promise<AssessmentResult[]> => {
     return data.data.map(mapFromBackendFormat);
   } catch (error) {
     console.error('Error fetching responses:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a questionnaire response (soft delete)
+ */
+export const deleteResponse = async (id: string): Promise<void> => {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/questionnaire/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }, 5000); // 5 second timeout
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete response');
+    }
+  } catch (error) {
+    console.error('Error deleting response:', error);
     throw error;
   }
 };

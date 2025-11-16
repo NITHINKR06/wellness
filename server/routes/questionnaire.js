@@ -100,6 +100,97 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/questionnaire/stats - Get aggregate statistics
+router.get('/stats', async (req, res) => {
+  try {
+    const responses = await Response.find({ 
+      deleted: { $ne: true }
+    });
+
+    if (responses.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          total: 0,
+          averageScore: 0,
+          riskDistribution: {
+            lowRisk: 0,
+            possibleRisk: 0,
+          },
+          averageSleepHours: 0,
+          averageSleepByStage: {},
+          averageSleepByRegion: {},
+        },
+      });
+    }
+
+    // Calculate average risk score
+    const totalScore = responses.reduce((sum, r) => sum + (r.score || 0), 0);
+    const averageScore = (totalScore / responses.length).toFixed(2);
+
+    // Risk distribution
+    const riskDistribution = {
+      lowRisk: responses.filter(r => r.resultLabel === 'Low Risk').length,
+      possibleRisk: responses.filter(r => r.resultLabel === 'Possible PPD Risk').length,
+    };
+
+    // Average sleep hours
+    const totalSleep = responses.reduce((sum, r) => sum + (r.sleepHours || 0), 0);
+    const averageSleepHours = (totalSleep / responses.length).toFixed(2);
+
+    // Average sleep by stage
+    const sleepByStage = {};
+    const stageCounts = {};
+    responses.forEach(r => {
+      if (!sleepByStage[r.stage]) {
+        sleepByStage[r.stage] = 0;
+        stageCounts[r.stage] = 0;
+      }
+      sleepByStage[r.stage] += r.sleepHours || 0;
+      stageCounts[r.stage]++;
+    });
+    const averageSleepByStage = {};
+    Object.keys(sleepByStage).forEach(stage => {
+      averageSleepByStage[stage] = (sleepByStage[stage] / stageCounts[stage]).toFixed(2);
+    });
+
+    // Average sleep by region
+    const sleepByRegion = {};
+    const regionCounts = {};
+    responses.forEach(r => {
+      if (!sleepByRegion[r.region]) {
+        sleepByRegion[r.region] = 0;
+        regionCounts[r.region] = 0;
+      }
+      sleepByRegion[r.region] += r.sleepHours || 0;
+      regionCounts[r.region]++;
+    });
+    const averageSleepByRegion = {};
+    Object.keys(sleepByRegion).forEach(region => {
+      averageSleepByRegion[region] = (sleepByRegion[region] / regionCounts[region]).toFixed(2);
+    });
+
+    res.json({
+      success: true,
+      data: {
+        total: responses.length,
+        averageScore: parseFloat(averageScore),
+        riskDistribution,
+        averageSleepHours: parseFloat(averageSleepHours),
+        averageSleepByStage,
+        averageSleepByRegion,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch statistics',
+      message: error.message,
+    });
+  }
+});
+
 // GET /api/questionnaire/:id - Get a specific questionnaire response
 router.get('/:id', async (req, res) => {
   try {

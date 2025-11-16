@@ -5,17 +5,20 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from './src/screens/HomeScreen';
 import QuestionnaireScreen from './src/screens/QuestionnaireScreen';
 import ResultsScreen from './src/screens/ResultsScreen';
+import DetailedResultScreen from './src/screens/DetailedResultScreen';
+import ResourcesScreen from './src/screens/ResourcesScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import { AssessmentResult } from './src/models/result';
 import { submitQuestionnaire, fetchAllResponses } from './src/utils/api';
 
-type Screen = 'home' | 'questionnaire' | 'results';
+type Screen = 'home' | 'questionnaire' | 'results' | 'detailedResult' | 'resources';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [resultsHistory, setResultsHistory] = useState<AssessmentResult[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedResult, setSelectedResult] = useState<AssessmentResult | null>(null);
 
   // Load results from backend on app start
   useEffect(() => {
@@ -131,15 +134,29 @@ export default function App() {
           <HomeScreen
             onNavigateToQuestionnaire={handleNavigateToQuestionnaire}
             onNavigateToResults={handleNavigateToResults}
+            onNavigateToResources={() => setCurrentScreen('resources')}
             resultsCount={resultsHistory.length}
+          />
+        ) : currentScreen === 'resources' ? (
+          <ResourcesScreen
+            onBack={handleNavigateToHome}
           />
         ) : currentScreen === 'questionnaire' ? (
           <QuestionnaireScreen onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+        ) : currentScreen === 'detailedResult' && selectedResult ? (
+          <DetailedResultScreen
+            result={selectedResult}
+            onBack={() => setCurrentScreen('results')}
+          />
         ) : (
           <ResultsScreen
             resultsHistory={resultsHistory}
             onBack={handleNavigateToHome}
             onDelete={handleDelete}
+            onResultPress={(result) => {
+              setSelectedResult(result);
+              setCurrentScreen('detailedResult');
+            }}
           />
         )}
       </View>

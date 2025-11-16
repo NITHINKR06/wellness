@@ -16,9 +16,10 @@ interface ResultsScreenProps {
   resultsHistory: AssessmentResult[];
   onBack?: () => void;
   onDelete?: (id: string) => Promise<void>; // Callback to refresh list after deletion
+  onResultPress?: (result: AssessmentResult) => void; // Callback when a result is pressed
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, onDelete }: ResultsScreenProps) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, onDelete, onResultPress }: ResultsScreenProps) => {
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   // Handle delete action
@@ -126,7 +127,11 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
 
     return (
       <View style={styles.cardContainer}>
-        <View style={[styles.resultCard, { borderTopColor: riskColors.primary }]}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => onResultPress && onResultPress(item)}
+          style={[styles.resultCard, { borderTopColor: riskColors.primary }]}
+        >
           {/* Card Header */}
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderLeft}>
@@ -224,6 +229,71 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
               {deletingId === item.id ? 'Deleting...' : 'Delete'}
             </Text>
           </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // Calculate average sleep hours
+  const calculateAverageSleep = () => {
+    if (resultsHistory.length === 0) return 0;
+    const total = resultsHistory.reduce((sum, r) => sum + r.sleepHours, 0);
+    return (total / resultsHistory.length).toFixed(1);
+  };
+
+  const averageSleep = calculateAverageSleep();
+  const sleepTip = parseFloat(averageSleep) < 6 
+    ? "Your average sleep is low. Try to rest more and establish a consistent sleep schedule."
+    : parseFloat(averageSleep) > 9
+    ? "You're getting plenty of sleep. Maintain this healthy routine."
+    : "Your sleep patterns look good. Keep up the healthy habits!";
+
+  // Render risk trend chart
+  const renderRiskTrendChart = () => {
+    if (resultsHistory.length < 2) return null;
+
+    const sortedResults = [...resultsHistory].sort((a, b) => 
+      a.timestamp.getTime() - b.timestamp.getTime()
+    );
+    const maxScore = 4;
+    const chartHeight = 120;
+    const chartWidth = '100%';
+
+    return (
+      <View style={styles.chartContainer}>
+        <View style={styles.chartHeader}>
+          <Ionicons name="trending-up" size={20} color="#6c5ce7" />
+          <Text style={styles.chartTitle}>Risk Score Trend</Text>
+        </View>
+        <View style={styles.chartWrapper}>
+          <View style={styles.chart}>
+            {sortedResults.map((item, index) => {
+              const score = calculateRiskScore(item);
+              const height = (score / maxScore) * chartHeight;
+              const isRisk = item.riskResult === 'Possible PPD Risk';
+              return (
+                <View key={item.id} style={styles.chartBarContainer}>
+                  <View style={styles.chartBarWrapper}>
+                    <View
+                      style={[
+                        styles.chartBar,
+                        {
+                          height: Math.max(height, 4),
+                          backgroundColor: isRisk ? '#e74c3c' : '#27ae60',
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.chartLabel}>{index + 1}</Text>
+                </View>
+              );
+            })}
+          </View>
+          <View style={styles.chartAxis}>
+            <Text style={styles.chartAxisLabel}>0</Text>
+            <Text style={styles.chartAxisLabel}>2</Text>
+            <Text style={styles.chartAxisLabel}>4</Text>
+          </View>
         </View>
       </View>
     );
@@ -231,31 +301,55 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
 
   // Statistics Header
   const renderStatsHeader = () => (
-    <View style={styles.statsContainer}>
-      <View style={styles.statsCard}>
-        <View style={styles.statsIconContainer}>
-          <Ionicons name="document-text" size={24} color="#6c5ce7" />
+    <>
+      <View style={styles.statsContainer}>
+        <View style={styles.statsCard}>
+          <View style={styles.statsIconContainer}>
+            <Ionicons name="document-text" size={24} color="#6c5ce7" />
+          </View>
+          <Text style={styles.statsValue}>{stats.total}</Text>
+          <Text style={styles.statsLabel}>Total Assessments</Text>
         </View>
-        <Text style={styles.statsValue}>{stats.total}</Text>
-        <Text style={styles.statsLabel}>Total Assessments</Text>
-      </View>
-      
-      <View style={styles.statsCard}>
-        <View style={[styles.statsIconContainer, { backgroundColor: '#fee' }]}>
-          <Ionicons name="alert-circle" size={24} color="#e74c3c" />
+        
+        <View style={styles.statsCard}>
+          <View style={[styles.statsIconContainer, { backgroundColor: '#fee' }]}>
+            <Ionicons name="alert-circle" size={24} color="#e74c3c" />
+          </View>
+          <Text style={[styles.statsValue, { color: '#e74c3c' }]}>{stats.riskCount}</Text>
+          <Text style={styles.statsLabel}>Possible Risk</Text>
         </View>
-        <Text style={[styles.statsValue, { color: '#e74c3c' }]}>{stats.riskCount}</Text>
-        <Text style={styles.statsLabel}>Possible Risk</Text>
-      </View>
-      
-      <View style={styles.statsCard}>
-        <View style={[styles.statsIconContainer, { backgroundColor: '#e8f8f0' }]}>
-          <Ionicons name="checkmark-circle" size={24} color="#27ae60" />
+        
+        <View style={styles.statsCard}>
+          <View style={[styles.statsIconContainer, { backgroundColor: '#e8f8f0' }]}>
+            <Ionicons name="checkmark-circle" size={24} color="#27ae60" />
+          </View>
+          <Text style={[styles.statsValue, { color: '#27ae60' }]}>{stats.lowRiskCount}</Text>
+          <Text style={styles.statsLabel}>Low Risk</Text>
         </View>
-        <Text style={[styles.statsValue, { color: '#27ae60' }]}>{stats.lowRiskCount}</Text>
-        <Text style={styles.statsLabel}>Low Risk</Text>
       </View>
-    </View>
+
+      {/* Risk Trend Chart */}
+      {resultsHistory.length >= 2 && renderRiskTrendChart()}
+
+      {/* Sleep Analysis */}
+      {resultsHistory.length > 0 && (
+        <View style={styles.sleepAnalysisCard}>
+          <View style={styles.sleepAnalysisHeader}>
+            <Ionicons name="moon" size={22} color="#6c5ce7" />
+            <Text style={styles.sleepAnalysisTitle}>Sleep Analysis</Text>
+          </View>
+          <View style={styles.sleepAnalysisContent}>
+            <Text style={styles.sleepAverage}>
+              Average Sleep: <Text style={styles.sleepAverageValue}>{averageSleep}h</Text>
+            </Text>
+            <View style={styles.sleepTipContainer}>
+              <Ionicons name="bulb" size={18} color="#f39c12" />
+              <Text style={styles.sleepTip}>{sleepTip}</Text>
+            </View>
+          </View>
+        </View>
+      )}
+    </>
   );
 
   // Empty state
@@ -646,6 +740,129 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: 20,
+  },
+  chartContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2d3436',
+  },
+  chartWrapper: {
+    position: 'relative',
+  },
+  chart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-around',
+    height: 140,
+    paddingBottom: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  chartBarContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: '100%',
+  },
+  chartBarWrapper: {
+    width: '80%',
+    height: '100%',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  chartBar: {
+    width: '100%',
+    minHeight: 4,
+    borderRadius: 4,
+  },
+  chartLabel: {
+    fontSize: 11,
+    color: '#636e72',
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  chartAxis: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    marginTop: 8,
+  },
+  chartAxisLabel: {
+    fontSize: 11,
+    color: '#636e72',
+    fontWeight: '600',
+  },
+  sleepAnalysisCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  sleepAnalysisHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  sleepAnalysisTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2d3436',
+  },
+  sleepAnalysisContent: {
+    gap: 12,
+  },
+  sleepAverage: {
+    fontSize: 16,
+    color: '#636e72',
+    fontWeight: '600',
+  },
+  sleepAverageValue: {
+    fontSize: 18,
+    color: '#6c5ce7',
+    fontWeight: 'bold',
+  },
+  sleepTipContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff9e6',
+    padding: 12,
+    borderRadius: 12,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+  },
+  sleepTip: {
+    flex: 1,
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
   },
 });
 

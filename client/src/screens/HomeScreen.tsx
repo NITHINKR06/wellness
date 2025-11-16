@@ -11,12 +11,14 @@ import { Ionicons } from '@expo/vector-icons';
 interface HomeScreenProps {
   onNavigateToQuestionnaire: () => void;
   onNavigateToResults: () => void;
+  onNavigateToResources?: () => void;
   resultsCount?: number;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ 
   onNavigateToQuestionnaire, 
   onNavigateToResults,
+  onNavigateToResources,
   resultsCount = 0 
 }) => {
   return (
@@ -166,6 +168,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             </Text>
           </View>
         </View>
+
+        {/* Resources Button */}
+        {onNavigateToResources && (
+          <TouchableOpacity
+            style={styles.resourcesButton}
+            onPress={onNavigateToResources}
+            activeOpacity={0.85}
+          >
+            <View style={styles.resourcesButtonContent}>
+              <View style={styles.resourcesIconContainer}>
+                <Ionicons name="help-circle" size={28} color="#6c5ce7" />
+              </View>
+              <View style={styles.resourcesButtonTextContainer}>
+                <Text style={styles.resourcesButtonTitle}>Resources & Support</Text>
+                <Text style={styles.resourcesButtonSubtitle}>
+                  Mental health hotlines, self-care tips, and guidance
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#6c5ce7" />
+            </View>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.footerSpacer} />
       </ScrollView>
@@ -574,6 +598,47 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     height: 20,
+  },
+  resourcesButton: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: '#6c5ce7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  resourcesButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  resourcesIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#f0f2ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  resourcesButtonTextContainer: {
+    flex: 1,
+  },
+  resourcesButtonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2d3436',
+    marginBottom: 4,
+  },
+  resourcesButtonSubtitle: {
+    fontSize: 14,
+    color: '#636e72',
+    lineHeight: 20,
   },
 });
 

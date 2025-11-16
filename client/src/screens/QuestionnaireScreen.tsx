@@ -101,7 +101,7 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
     }));
   };
 
-  // Handle sleep hours input with validation (0-24 only)
+  // Handle sleep hours input with validation (4-12 hours only)
   const handleSleepHoursChange = (text: string) => {
     // Allow empty string (for deletion)
     if (text === '') {
@@ -130,14 +130,14 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
       return;
     }
 
-    // Restrict to 0-24 range
-    if (numValue < 0) {
-      setSleepHours('0');
+    // Restrict to 4-12 hours range (realistic sleep hours)
+    if (numValue < 4) {
+      setSleepHours('4');
       return;
     }
   
-    if (numValue > 24) {
-      setSleepHours('24');
+    if (numValue > 12) {
+      setSleepHours('12');
       return;
     }
 
@@ -159,10 +159,10 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
     }
 
     const sleepHoursNum = parseFloat(sleepHours);
-    if (isNaN(sleepHoursNum) || sleepHoursNum < 0 || sleepHoursNum > 24) {
+    if (isNaN(sleepHoursNum) || sleepHoursNum < 4 || sleepHoursNum > 12) {
       Alert.alert(
         'Invalid Input',
-        'Please enter a valid number of sleep hours (0-24)',
+        'Please enter a valid number of sleep hours (4-12 hours)',
         [{ text: 'OK' }]
       );
       return;
@@ -301,7 +301,7 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
                 style={styles.input}
                 value={sleepHours}
                 onChangeText={handleSleepHoursChange}
-                placeholder="Enter hours (0-24)"
+                placeholder="Enter hours (4-12)"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
                 maxLength={5}

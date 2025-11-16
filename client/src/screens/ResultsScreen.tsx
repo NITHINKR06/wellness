@@ -112,236 +112,148 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
     // Color scheme based on risk
     const riskColors = isRisk 
       ? {
-          primary: '#ff6b6b',
-          light: '#fff5f5',
+          primary: '#e74c3c',
+          light: '#fee',
           gradient: ['#ff6b6b', '#ee5a6f'],
-          iconBg: '#fff5f5',
+          iconBg: '#fee5e5',
         }
       : {
-          primary: '#51cf66',
-          light: '#f0fdf4',
-          gradient: ['#51cf66', '#69db7c'],
-          iconBg: '#f0fdf4',
+          primary: '#27ae60',
+          light: '#e8f8f0',
+          gradient: ['#52c41a', '#73d13d'],
+          iconBg: '#e6f7f0',
         };
 
-    const percentage = (riskScore / maxScore) * 100;
-    const riskStatus = isRisk ? 'Risk Detected' : 'Low Risk';
-    
     return (
       <View style={styles.cardContainer}>
-        <View style={[styles.resultCard]}>
-          {/* Card Top Gradient Section */}
-          <View style={[styles.cardTopGradient, { 
-            backgroundColor: isRisk ? 'rgba(255, 107, 107, 0.08)' : 'rgba(81, 207, 102, 0.08)',
-          }]}>
-            <View style={styles.cardTopContent}>
-              {/* Left Side - Number & Date */}
-              <View style={styles.cardTopLeft}>
-                <View style={[styles.cardNumberBadge, { 
-                  backgroundColor: riskColors.primary,
-                  shadowColor: riskColors.primary,
-                }]}>
-                  <Text style={styles.cardNumber}>#{resultsHistory.length - index}</Text>
-                </View>
-                <View style={styles.cardDateContainer}>
-                  <View style={styles.cardDateRow}>
-                    <Ionicons name="calendar-outline" size={14} color="#636e72" />
-                    <Text style={styles.cardDate}>{formatDate(item.timestamp)}</Text>
-                  </View>
-                  <View style={styles.cardDateRow}>
-                    <Ionicons name="time-outline" size={14} color="#636e72" />
-                    <Text style={styles.cardTime}>{formatTime(item.timestamp)}</Text>
-                  </View>
-                </View>
+        <View style={[styles.resultCard, { borderTopColor: riskColors.primary }]}>
+          {/* Card Header */}
+          <View style={styles.cardHeader}>
+            <View style={styles.cardHeaderLeft}>
+              <View style={[styles.cardNumberBadge, { backgroundColor: riskColors.iconBg }]}>
+                <Text style={[styles.cardNumber, { color: riskColors.primary }]}>
+                  #{resultsHistory.length - index}
+                </Text>
               </View>
-              
-              {/* Right Side - Risk Badge */}
-              <View style={[styles.riskBadgeContainer, {
-                backgroundColor: riskColors.primary,
-              }]}>
-                <Ionicons 
-                  name={isRisk ? "warning" : "checkmark-circle"} 
-                  size={24} 
-                  color="#fff"
-                />
-                <View style={styles.riskBadgeTextContainer}>
-                  <Text style={styles.riskStatus}>{riskStatus}</Text>
-                  <Text style={styles.riskSubText}>{item.riskResult}</Text>
-                </View>
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.cardDate}>{formatDate(item.timestamp)}</Text>
+                <Text style={styles.cardTime}>{formatTime(item.timestamp)}</Text>
               </View>
+            </View>
+            <View style={[styles.riskBadge, { backgroundColor: riskColors.light }]}>
+              <Ionicons 
+                name={isRisk ? "alert-circle" : "checkmark-circle"} 
+                size={18} 
+                color={riskColors.primary}
+              />
+              <Text style={[styles.riskText, { color: riskColors.primary }]}>
+                {item.riskResult}
+              </Text>
             </View>
           </View>
 
-          {/* Main Card Content */}
-          <View style={styles.cardMainContent}>
-            {/* Risk Score Section - Center Focus */}
-            <View style={styles.riskScoreMainSection}>
-              <View style={[styles.circularScoreContainer, {
-                borderColor: riskColors.primary,
-              }]}>
-                <View style={[styles.circularScoreInner, {
-                  backgroundColor: riskColors.iconBg,
-                }]}>
-                  <Text style={[styles.circularScoreValue, { color: riskColors.primary }]}>
-                    {riskScore}
-                  </Text>
-                  <Text style={styles.circularScoreLabel}>Risk Score</Text>
-                  <View style={[styles.circularScoreMax, { color: riskColors.primary }]}>
-                    <Text style={styles.circularScoreMaxText}>of {maxScore}</Text>
-                  </View>
-                </View>
-                {/* Circular Progress Indicator */}
-                <View style={[styles.circularProgress, {
-                  borderColor: riskColors.primary,
-                }]}>
-                  <View style={[styles.circularProgressFill, {
-                    borderColor: riskColors.primary,
-                    borderTopColor: riskColors.primary,
-                    borderRightColor: riskColors.primary,
-                    borderBottomColor: percentage >= 75 ? riskColors.primary : 'transparent',
-                    borderLeftColor: percentage >= 50 ? riskColors.primary : 'transparent',
-                  }]} />
-                </View>
-              </View>
-              
-              {/* Progress Bar Below */}
-              <View style={styles.progressBarContainer}>
-                <View style={[styles.progressBarBackground, { backgroundColor: riskColors.light }]}>
-                  <View 
-                    style={[styles.progressBarFill, { 
-                      width: `${percentage}%`,
-                      backgroundColor: riskColors.primary,
-                    }]} 
-                  >
-                    <View style={styles.progressBarGlow} />
-                  </View>
-                </View>
-                <Text style={[styles.progressPercentage, { color: riskColors.primary }]}>
-                  {percentage.toFixed(0)}%
+          {/* Risk Score Display */}
+          <View style={styles.scoreSection}>
+            <View style={styles.scoreHeader}>
+              <Ionicons name="pulse" size={20} color={riskColors.primary} />
+              <Text style={styles.scoreLabel}>Risk Score</Text>
+            </View>
+            <View style={styles.scoreContainer}>
+              <View style={styles.scoreValueContainer}>
+                <Text style={[styles.scoreValue, { color: riskColors.primary }]}>
+                  {riskScore}
                 </Text>
+                <Text style={styles.scoreMax}>/ {maxScore}</Text>
               </View>
-            </View>
-
-            {/* Details Grid - Two Rows */}
-            <View style={styles.detailsGridModern}>
-              <View style={[styles.detailCard, { 
-                backgroundColor: isRisk ? 'rgba(255, 107, 107, 0.06)' : 'rgba(81, 207, 102, 0.06)',
-                borderColor: isRisk ? 'rgba(255, 107, 107, 0.2)' : 'rgba(81, 207, 102, 0.2)',
-              }]}>
-                <View style={[styles.detailIconModern, { backgroundColor: riskColors.primary }]}>
-                  <Ionicons name="flag" size={22} color="#fff" />
-                </View>
-                <View style={styles.detailContent}>
-                  <Text style={styles.detailLabelModern}>Stage</Text>
-                  <Text style={[styles.detailValueModern, { color: riskColors.primary }]}>
-                    {item.stage}
-                  </Text>
-                </View>
-              </View>
-              
-              <View style={[styles.detailCard, { 
-                backgroundColor: isRisk ? 'rgba(255, 107, 107, 0.06)' : 'rgba(81, 207, 102, 0.06)',
-                borderColor: isRisk ? 'rgba(255, 107, 107, 0.2)' : 'rgba(81, 207, 102, 0.2)',
-              }]}>
-                <View style={[styles.detailIconModern, { backgroundColor: riskColors.primary }]}>
-                  <Ionicons name="location" size={22} color="#fff" />
-                </View>
-                <View style={styles.detailContent}>
-                  <Text style={styles.detailLabelModern}>Region</Text>
-                  <Text style={[styles.detailValueModern, { color: riskColors.primary }]}>
-                    {item.region}
-                  </Text>
-                </View>
-              </View>
-              
-              <View style={[styles.detailCard, { 
-                backgroundColor: isRisk ? 'rgba(255, 107, 107, 0.06)' : 'rgba(81, 207, 102, 0.06)',
-                borderColor: isRisk ? 'rgba(255, 107, 107, 0.2)' : 'rgba(81, 207, 102, 0.2)',
-              }]}>
-                <View style={[styles.detailIconModern, { backgroundColor: riskColors.primary }]}>
-                  <Ionicons name="moon" size={22} color="#fff" />
-                </View>
-                <View style={styles.detailContent}>
-                  <Text style={styles.detailLabelModern}>Sleep Hours</Text>
-                  <Text style={[styles.detailValueModern, { color: riskColors.primary }]}>
-                    {item.sleepHours}h
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Delete Button */}
-            <TouchableOpacity
-              style={[styles.deleteButtonModern, deletingId === item.id && styles.deleteButtonDisabled]}
-              onPress={() => handleDelete(item)}
-              disabled={deletingId === item.id}
-              activeOpacity={0.7}
-            >
-              <View style={styles.deleteButtonContentModern}>
-                <View style={styles.deleteIconContainer}>
-                  <Ionicons 
-                    name={deletingId === item.id ? "hourglass" : "trash"} 
-                    size={20} 
-                    color="#fff" 
+              <View style={styles.scoreBarContainer}>
+                <View style={[styles.scoreBarBackground, { backgroundColor: riskColors.light }]}>
+                  <View 
+                    style={[
+                      styles.scoreBarFill, 
+                      { 
+                        width: `${(riskScore / maxScore) * 100}%`,
+                        backgroundColor: riskColors.primary,
+                      }
+                    ]} 
                   />
                 </View>
-                <Text style={styles.deleteButtonTextModern}>
-                  {deletingId === item.id ? 'Deleting...' : 'Delete Assessment'}
-                </Text>
               </View>
-            </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Details Grid */}
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <View style={[styles.detailIcon, { backgroundColor: riskColors.iconBg }]}>
+                <Ionicons name="flag" size={18} color={riskColors.primary} />
+              </View>
+              <Text style={styles.detailLabel}>Stage</Text>
+              <Text style={styles.detailValue}>{item.stage}</Text>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <View style={[styles.detailIcon, { backgroundColor: riskColors.iconBg }]}>
+                <Ionicons name="location" size={18} color={riskColors.primary} />
+              </View>
+              <Text style={styles.detailLabel}>Region</Text>
+              <Text style={styles.detailValue}>{item.region}</Text>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <View style={[styles.detailIcon, { backgroundColor: riskColors.iconBg }]}>
+                <Ionicons name="moon" size={18} color={riskColors.primary} />
+              </View>
+              <Text style={styles.detailLabel}>Sleep</Text>
+              <Text style={styles.detailValue}>{item.sleepHours}h</Text>
+            </View>
+          </View>
+
+          {/* Delete Button */}
+          <TouchableOpacity
+            style={[styles.deleteButton, deletingId === item.id && styles.deleteButtonDisabled]}
+            onPress={() => handleDelete(item)}
+            disabled={deletingId === item.id}
+            activeOpacity={0.7}
+          >
+            <Ionicons 
+              name={deletingId === item.id ? "hourglass" : "trash-outline"} 
+              size={18} 
+              color="#e74c3c" 
+            />
+            <Text style={styles.deleteButtonText}>
+              {deletingId === item.id ? 'Deleting...' : 'Delete'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
   };
 
-  // Modern Statistics Header
+  // Statistics Header
   const renderStatsHeader = () => (
     <View style={styles.statsContainer}>
-      <View style={[styles.statsCard, styles.statsCardPrimary]}>
-        <View style={styles.statsCardHeader}>
-          <View style={[styles.statsIconContainer, styles.statsIconContainerPrimary]}>
-            <Ionicons name="document-text" size={26} color="#667eea" />
-          </View>
-          <View style={styles.statsGradient} />
+      <View style={styles.statsCard}>
+        <View style={styles.statsIconContainer}>
+          <Ionicons name="document-text" size={24} color="#6c5ce7" />
         </View>
         <Text style={styles.statsValue}>{stats.total}</Text>
         <Text style={styles.statsLabel}>Total Assessments</Text>
-        <View style={styles.statsTrend}>
-          <Ionicons name="trending-up" size={16} color="#667eea" />
-          <Text style={styles.statsTrendText}>Tracked</Text>
-        </View>
       </View>
       
-      <View style={[styles.statsCard, styles.statsCardRisk]}>
-        <View style={styles.statsCardHeader}>
-          <View style={[styles.statsIconContainer, styles.statsIconContainerRisk]}>
-            <Ionicons name="alert-circle" size={26} color="#ff6b6b" />
-          </View>
-          <View style={styles.statsGradientRisk} />
+      <View style={styles.statsCard}>
+        <View style={[styles.statsIconContainer, { backgroundColor: '#fee' }]}>
+          <Ionicons name="alert-circle" size={24} color="#e74c3c" />
         </View>
-        <Text style={[styles.statsValue, styles.statsValueRisk]}>{stats.riskCount}</Text>
+        <Text style={[styles.statsValue, { color: '#e74c3c' }]}>{stats.riskCount}</Text>
         <Text style={styles.statsLabel}>Possible Risk</Text>
-        <View style={styles.statsIndicator}>
-          <View style={styles.statsDot} />
-          <Text style={styles.statsIndicatorText}>Monitor</Text>
-        </View>
       </View>
       
-      <View style={[styles.statsCard, styles.statsCardSafe]}>
-        <View style={styles.statsCardHeader}>
-          <View style={[styles.statsIconContainer, styles.statsIconContainerSafe]}>
-            <Ionicons name="checkmark-circle" size={26} color="#51cf66" />
-          </View>
-          <View style={styles.statsGradientSafe} />
+      <View style={styles.statsCard}>
+        <View style={[styles.statsIconContainer, { backgroundColor: '#e8f8f0' }]}>
+          <Ionicons name="checkmark-circle" size={24} color="#27ae60" />
         </View>
-        <Text style={[styles.statsValue, styles.statsValueSafe]}>{stats.lowRiskCount}</Text>
+        <Text style={[styles.statsValue, { color: '#27ae60' }]}>{stats.lowRiskCount}</Text>
         <Text style={styles.statsLabel}>Low Risk</Text>
-        <View style={styles.statsIndicator}>
-          <View style={[styles.statsDot, styles.statsDotSafe]} />
-          <Text style={styles.statsIndicatorText}>Healthy</Text>
-        </View>
       </View>
     </View>
   );
@@ -351,43 +263,30 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconContainer}>
         <View style={styles.emptyIconCircle}>
-          <View style={styles.emptyIconInner}>
-            <Ionicons name="clipboard-outline" size={64} color="#667eea" />
-          </View>
+          <Ionicons name="clipboard-outline" size={60} color="#6c5ce7" />
         </View>
       </View>
       <Text style={styles.emptyTitle}>No Assessments Yet</Text>
       <Text style={styles.emptySubtext}>
-        Complete your first questionnaire to start tracking your PPD risk assessment results and gain valuable insights
+        Complete your first questionnaire to start tracking your PPD risk assessment results
       </Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {/* Modern Professional Header */}
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerBackground} />
-        <View style={styles.headerCircle1} />
-        <View style={styles.headerCircle2} />
-        <View style={styles.headerCircle3} />
         <View style={styles.headerContent}>
-          <View style={styles.headerTopSection}>
-            <View style={styles.headerLogoContainer}>
-              <View style={styles.headerLogo}>
-                <Ionicons name="analytics" size={32} color="#fff" />
-              </View>
-            </View>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>Assessment History</Text>
-              <Text style={styles.headerSubtitle}>
-                {stats.total} {stats.total === 1 ? 'assessment' : 'assessments'} recorded
-              </Text>
-            </View>
+          <View style={styles.headerIconContainer}>
+            <Ionicons name="analytics" size={28} color="#fff" />
           </View>
-          <Text style={styles.headerDescription}>
-            Track your mental wellness journey with detailed insights
-          </Text>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Assessment History</Text>
+            <Text style={styles.headerSubtitle}>
+              {stats.total} {stats.total === 1 ? 'assessment' : 'assessments'} recorded
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -401,15 +300,8 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
         {resultsHistory.length > 0 ? (
           <View style={styles.resultsSection}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderLeft}>
-                <View style={styles.sectionIconWrapper}>
-                  <Ionicons name="list" size={22} color="#667eea" />
-                </View>
-                <View>
-                  <Text style={styles.sectionTitle}>Recent Assessments</Text>
-                  <Text style={styles.sectionSubtitle}>Your assessment history</Text>
-                </View>
-              </View>
+              <Ionicons name="list" size={20} color="#2d3436" />
+              <Text style={styles.sectionTitle}>Recent Assessments</Text>
             </View>
             <FlatList
               data={resultsHistory}
@@ -430,105 +322,48 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f5f7fa',
   },
   header: {
-    backgroundColor: 'transparent',
+    backgroundColor: '#6c5ce7',
     paddingTop: 60,
-    paddingBottom: 50,
+    paddingBottom: 24,
     paddingHorizontal: 20,
-    position: 'relative',
-    overflow: 'hidden',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#667eea',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  headerCircle1: {
-    position: 'absolute',
-    top: -80,
-    right: -80,
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  headerCircle2: {
-    position: 'absolute',
-    top: 100,
-    left: -60,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  headerCircle3: {
-    position: 'absolute',
-    bottom: -40,
-    right: 40,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#6c5ce7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   headerContent: {
-    zIndex: 1,
-    position: 'relative',
-  },
-  headerTopSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  headerLogoContainer: {
-    marginRight: 16,
-  },
-  headerLogo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  headerIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    marginRight: 16,
   },
   headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 4,
     letterSpacing: 0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   headerSubtitle: {
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '600',
-  },
-  headerDescription: {
     fontSize: 15,
     color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 22,
-    paddingTop: 4,
+    fontWeight: '500',
   },
   scrollView: {
     flex: 1,
@@ -549,127 +384,37 @@ const styles = StyleSheet.create({
   statsCard: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: '#e9ecef',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  statsCardPrimary: {
-    borderTopWidth: 3,
-    borderTopColor: '#667eea',
-  },
-  statsCardRisk: {
-    borderTopWidth: 3,
-    borderTopColor: '#ff6b6b',
-  },
-  statsCardSafe: {
-    borderTopWidth: 3,
-    borderTopColor: '#51cf66',
-  },
-  statsCardHeader: {
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 12,
-    position: 'relative',
+    borderColor: '#f0f0f0',
   },
   statsIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f0f4ff',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 2,
-  },
-  statsIconContainerPrimary: {
-    backgroundColor: '#f0f4ff',
-  },
-  statsIconContainerRisk: {
-    backgroundColor: '#fff5f5',
-  },
-  statsIconContainerSafe: {
-    backgroundColor: '#f0fdf4',
-  },
-  statsGradient: {
-    position: 'absolute',
-    top: -20,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-  },
-  statsGradientRisk: {
-    position: 'absolute',
-    top: -20,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
-  },
-  statsGradientSafe: {
-    position: 'absolute',
-    top: -20,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(81, 207, 102, 0.1)',
+    marginBottom: 12,
   },
   statsValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#2d3436',
-    marginBottom: 6,
-  },
-  statsValueRisk: {
-    color: '#ff6b6b',
-  },
-  statsValueSafe: {
-    color: '#51cf66',
+    marginBottom: 4,
   },
   statsLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#636e72',
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 8,
-  },
-  statsTrend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  statsTrendText: {
-    fontSize: 11,
-    color: '#667eea',
-    fontWeight: '600',
-  },
-  statsIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  statsDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ff6b6b',
-  },
-  statsDotSafe: {
-    backgroundColor: '#51cf66',
-  },
-  statsIndicatorText: {
-    fontSize: 11,
-    color: '#636e72',
-    fontWeight: '600',
   },
   resultsSection: {
     marginTop: 8,
@@ -677,33 +422,14 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
     paddingHorizontal: 4,
   },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  sectionIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#f0f4ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2d3436',
-    marginBottom: 2,
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    color: '#636e72',
-    fontWeight: '500',
+    marginLeft: 8,
   },
   separator: {
     height: 16,
@@ -713,25 +439,16 @@ const styles = StyleSheet.create({
   },
   resultCard: {
     backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
-    borderLeftWidth: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    borderTopWidth: 4,
     borderWidth: 1,
-    borderColor: '#e9ecef',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  cardAccent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 4,
-    height: '100%',
+    borderColor: '#f0f0f0',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -745,20 +462,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardNumberBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginRight: 12,
   },
   cardNumber: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   cardHeaderText: {
@@ -778,15 +490,10 @@ const styles = StyleSheet.create({
   riskBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
   },
   riskText: {
     fontSize: 13,
@@ -795,43 +502,24 @@ const styles = StyleSheet.create({
   },
   scoreSection: {
     marginBottom: 20,
-    padding: 20,
-    borderRadius: 18,
-    borderWidth: 1.5,
+    padding: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
   scoreHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
-  },
-  scoreIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  scoreHeaderText: {
-    flex: 1,
+    marginBottom: 12,
+    gap: 8,
   },
   scoreLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#2d3436',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  scoreSubLabel: {
-    fontSize: 12,
-    color: '#636e72',
-    fontWeight: '500',
   },
   scoreContainer: {
     flexDirection: 'row',
@@ -857,23 +545,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scoreBarBackground: {
-    height: 14,
-    borderRadius: 7,
+    height: 12,
+    borderRadius: 6,
     overflow: 'hidden',
-    position: 'relative',
   },
   scoreBarFill: {
     height: '100%',
-    borderRadius: 7,
-    position: 'relative',
-  },
-  scoreBarShine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: '50%',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 7,
+    borderRadius: 6,
   },
   detailsGrid: {
     flexDirection: 'row',
@@ -883,28 +561,19 @@ const styles = StyleSheet.create({
   detailItem: {
     flex: 1,
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: '#e9ecef',
   },
   detailIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 8,
   },
   detailLabel: {
     fontSize: 11,
@@ -912,38 +581,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 6,
+    marginBottom: 4,
     textAlign: 'center',
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: 14,
+    color: '#2d3436',
     fontWeight: '700',
     textAlign: 'center',
   },
   deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 107, 107, 0.3)',
-    backgroundColor: 'rgba(255, 107, 107, 0.05)',
-    overflow: 'hidden',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#fee',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fcc',
+    gap: 8,
   },
   deleteButtonDisabled: {
     opacity: 0.6,
   },
-  deleteButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 10,
-  },
   deleteButtonText: {
     fontSize: 15,
-    color: '#ff6b6b',
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    color: '#e74c3c',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
@@ -955,43 +621,31 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   emptyIconCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#667eea',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
-    borderWidth: 4,
-    borderColor: '#f0f4ff',
-  },
-  emptyIconInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#f8f9ff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    shadowColor: '#6c5ce7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   emptyTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#2d3436',
     marginBottom: 12,
     textAlign: 'center',
-    letterSpacing: 0.5,
   },
   emptySubtext: {
     fontSize: 16,
     color: '#636e72',
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 24,
     paddingHorizontal: 20,
-    fontWeight: '500',
   },
 });
 

@@ -6,9 +6,9 @@ A full-stack mobile application for Postpartum Depression (PPD) risk assessment 
 
 ```
 department/
-├── wellness-app/          # React Native frontend (Expo)
-├── wellness-backend/      # Node.js/Express backend API
-└── README.md             # This file
+├── client/          # React Native frontend (Expo)
+├── server/          # Node.js/Express backend API
+└── README.md        # This file
 ```
 
 ## 🚀 Quick Start
@@ -23,27 +23,27 @@ department/
 ### 1. Backend Setup
 
 ```bash
-cd wellness-backend
+cd server
 npm install
 cp .env.example .env  # Edit .env with your MongoDB URI
 npm run dev
 ```
 
-See [wellness-backend/README.md](./wellness-backend/README.md) for detailed backend setup.
+See [server/README.md](./server/README.md) for detailed backend setup.
 
 ### 2. Frontend Setup
 
 ```bash
-cd wellness-app
+cd client
 npm install
 npm start
 ```
 
-See [wellness-app/README.md](./wellness-app/README.md) for detailed frontend setup.
+See [client/README.md](./client/README.md) for detailed frontend setup.
 
 ### 3. Connect Frontend to Backend
 
-1. **For Android Emulator**: Set `USE_EMULATOR = true` in `wellness-app/src/utils/api.ts`
+1. **For Android Emulator**: Set `USE_EMULATOR = true` in `client/src/utils/api.ts`
 2. **For Physical Device**: Set `USE_EMULATOR = false` and update `LOCAL_IP_ADDRESS` with your computer's IP
 
 ## 📱 Features
@@ -69,8 +69,8 @@ See [wellness-app/README.md](./wellness-app/README.md) for detailed frontend set
 
 ## 📚 Documentation
 
-- [Frontend Documentation](./wellness-app/README.md)
-- [Backend Documentation](./wellness-backend/README.md)
+- [Frontend Documentation](./client/README.md)
+- [Backend Documentation](./server/README.md)
 
 ## 🔧 Development
 
@@ -78,13 +78,13 @@ See [wellness-app/README.md](./wellness-app/README.md) for detailed frontend set
 
 **Terminal 1 - Backend:**
 ```bash
-cd wellness-backend
+cd server
 npm run dev
 ```
 
 **Terminal 2 - Frontend:**
 ```bash
-cd wellness-app
+cd client
 npm start
 ```
 

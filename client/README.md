@@ -95,7 +95,7 @@ Before you begin, ensure you have the following installed:
 
 ```bash
 git clone <repository-url>
-cd wellness-app
+cd client
 ```
 
 ### Step 2: Install Dependencies
@@ -172,7 +172,7 @@ npm run web
 ## 📁 Project Structure
 
 ```
-wellness-app/
+client/
 ├── src/
 │   ├── models/
 │   │   └── result.ts              # TypeScript data models
@@ -180,7 +180,8 @@ wellness-app/
 │   │   ├── LoadingScreen.tsx       # App initialization screen
 │   │   ├── QuestionnaireScreen.tsx # Main questionnaire interface
 │   │   └── ResultsScreen.tsx      # Assessment results display
-│   └── utils/                      # Utility functions (if any)
+│   └── utils/
+│       └── api.ts                 # Backend API integration
 ├── assets/                          # Images and static assets
 ├── App.tsx                         # Main application component
 ├── index.ts                        # Application entry point

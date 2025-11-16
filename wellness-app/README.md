@@ -119,6 +119,14 @@ npm list
 
 ## 🏃 Getting Started
 
+### Backend Connection
+
+The app connects to a backend API for data persistence. See the main [README.md](../README.md) for backend setup.
+
+**Configure API URL** in `src/utils/api.ts`:
+- **Android Emulator**: Set `USE_EMULATOR = true`
+- **Physical Device**: Set `USE_EMULATOR = false` and update `LOCAL_IP_ADDRESS` with your computer's IP
+
 ### Development Mode
 
 Start the Expo development server:

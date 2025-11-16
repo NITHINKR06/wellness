@@ -29,6 +29,28 @@ PORT=4000
 MONGO_URI=mongodb://localhost:27017/wellness_db
 ```
 
+   Or use MongoDB Atlas (cloud):
+   ```env
+   MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/wellness_db?retryWrites=true&w=majority
+   ```
+
+## MongoDB Setup
+
+### Option 1: Local MongoDB
+
+1. **Install MongoDB**: Download from [mongodb.com/download](https://www.mongodb.com/try/download/community)
+2. **Start MongoDB Service**:
+   - Windows: Open Services (`services.msc`) → Start MongoDB service
+   - Or run: `mongod --dbpath "C:\data\db"`
+3. **Verify**: Check that MongoDB is running on port 27017
+
+### Option 2: MongoDB Atlas (Recommended for Quick Start)
+
+1. Sign up at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a free cluster
+3. Get your connection string
+4. Update `.env` with the connection string
+
 ## Running the Server
 
 ### Development Mode (with auto-reload)
@@ -139,4 +161,40 @@ Error responses include:
   "message": "Detailed error message"
 }
 ```
+
+## Frontend Connection
+
+The frontend app connects to this backend API. Configure the API URL in the frontend:
+
+1. **For Android Emulator**: Use `http://10.0.2.2:4000/api`
+2. **For Physical Device**: Use `http://YOUR_COMPUTER_IP:4000/api`
+3. **For iOS Simulator**: Use `http://localhost:4000/api`
+
+Find your computer's IP:
+- Windows: `ipconfig` (look for IPv4 Address under Wi-Fi)
+- Mac/Linux: `ifconfig` (look for inet under en0 or wlan0)
+
+## Troubleshooting
+
+### MongoDB Connection Error
+
+- **Error**: "MongoDB connection error" or "MONGO_URI is undefined"
+- **Solution**: 
+  - Ensure `.env` file exists with `MONGO_URI` set
+  - Verify MongoDB is running (local) or connection string is correct (Atlas)
+  - Check firewall isn't blocking port 27017
+
+### Port Already in Use
+
+- **Error**: "Port 4000 already in use"
+- **Solution**: Change `PORT` in `.env` file or stop the process using port 4000
+
+### Frontend Can't Connect
+
+- **Error**: "Request timeout" in frontend
+- **Solution**:
+  - Verify backend is running (`npm run dev`)
+  - Check API URL in frontend matches your setup
+  - Ensure firewall allows port 4000
+  - For physical devices, ensure phone and computer are on same WiFi network
 

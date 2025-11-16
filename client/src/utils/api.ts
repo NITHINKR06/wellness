@@ -140,14 +140,36 @@ export const submitQuestionnaire = async (
     }, 10000); // 10 second timeout for POST
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to submit questionnaire');
+      let errorMessage = 'Failed to submit questionnaire to MongoDB';
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.errors && Array.isArray(errorData.errors)) {
+          errorMessage = errorData.errors.map((e: any) => e.msg || e.message).join(', ');
+        }
+      } catch (parseError) {
+        // If we can't parse the error, use default message
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    if (!data.success || !data.data) {
+      throw new Error('Invalid response from server');
+    }
     return mapFromBackendFormat(data.data);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting questionnaire:', error);
+    // Provide more user-friendly error messages
+    if (error.message === 'Request timeout') {
+      throw new Error('Request timed out. Please check your internet connection and try again.');
+    }
+    if (error.message.includes('NetworkError') || error.message.includes('fetch failed')) {
+      throw new Error('Cannot connect to server. Please check your internet connection.');
+    }
     throw error;
   }
 };
@@ -165,14 +187,36 @@ export const fetchAllResponses = async (): Promise<AssessmentResult[]> => {
     }, 5000); // 5 second timeout
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch responses');
+      let errorMessage = 'Failed to fetch responses from MongoDB';
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch (parseError) {
+        // If we can't parse the error, use default message
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    if (!data.success || !data.data) {
+      // Return empty array if invalid response (graceful degradation)
+      return [];
+    }
     return data.data.map(mapFromBackendFormat);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching responses:', error);
+    // Provide user-friendly error messages
+    if (error.message === 'Request timeout') {
+      throw new Error('Request timed out. Please check your internet connection.');
+    }
+    if (error.message.includes('NetworkError') || error.message.includes('fetch failed')) {
+      // Return empty array on network error (graceful degradation)
+      return [];
+    }
     throw error;
   }
 };
@@ -190,11 +234,28 @@ export const deleteResponse = async (id: string): Promise<void> => {
     }, 5000); // 5 second timeout
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to delete response');
+      let errorMessage = 'Failed to delete response from MongoDB';
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch (parseError) {
+        // If we can't parse the error, use default message
+      }
+      throw new Error(errorMessage);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting response:', error);
+    // Provide user-friendly error messages
+    if (error.message === 'Request timeout') {
+      throw new Error('Request timed out. Please try again.');
+    }
+    if (error.message.includes('NetworkError') || error.message.includes('fetch failed')) {
+      throw new Error('Cannot connect to server. Please check your internet connection.');
+    }
     throw error;
   }
 };

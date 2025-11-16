@@ -1,27 +1,76 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const LoadingScreen: React.FC = () => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Fade in animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        })
+      ),
+    ]).start();
+  }, []);
+
+  const rotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        <Animated.View 
+          style={[
+            styles.iconContainer,
+            {
+              transform: [{ rotate }],
+            },
+          ]}
+        >
           <Ionicons name="medical-outline" size={64} color="#6c5ce7" />
-        </View>
+        </Animated.View>
         <Text style={styles.title}>PPD Risk Assessment</Text>
-        <Text style={styles.subtitle}>Your wellness companion</Text>
+        <Text style={styles.subtitle}>Connecting to database...</Text>
         <ActivityIndicator 
           size="large" 
           color="#6c5ce7" 
           style={styles.loader}
         />
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -62,6 +111,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#636e72',
     marginBottom: 40,
+    fontWeight: '500',
   },
   loader: {
     marginTop: 20,

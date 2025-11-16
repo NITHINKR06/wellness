@@ -10,6 +10,7 @@ import {
   Modal,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stage, Region, RiskResult, QuestionnaireResponse, AssessmentResult } from '../models/result';
@@ -399,20 +400,33 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
         </View>
 
         {/* Submit Button */}
-        <TouchableOpacity 
-          style={[
-            styles.submitButton, 
-            (!isFormValid || isSubmitting) && styles.submitButtonDisabled
-          ]} 
-          onPress={handleSubmit} 
-          activeOpacity={0.8}
-          disabled={!isFormValid || isSubmitting}
-        >
-          <Ionicons name="checkmark-circle" size={22} color="#fff" />
-          <Text style={styles.submitButtonText}>
-            {isSubmitting ? 'Submitting to Database...' : 'Submit Assessment'}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={[
+              styles.submitButton, 
+              (!isFormValid || isSubmitting) && styles.submitButtonDisabled
+            ]} 
+            onPress={handleSubmit} 
+            activeOpacity={0.8}
+            disabled={!isFormValid || isSubmitting}
+          >
+            <View style={styles.submitButtonContent}>
+              {isSubmitting ? (
+                <>
+                  <ActivityIndicator size="small" color="#fff" style={styles.submitLoader} />
+                  <Text style={styles.submitButtonText}>
+                    Saving to MongoDB...
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={22} color="#fff" />
+                  <Text style={styles.submitButtonText}>
+                    Submit Assessment
+                  </Text>
+                </>
+              )}
+            </View>
+          </TouchableOpacity>
 
         <View style={styles.footerSpacer} />
       </ScrollView>
@@ -815,9 +829,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   submitButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#6c5ce7',
     padding: 18,
     borderRadius: 14,
@@ -827,11 +838,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
-    gap: 10,
   },
   submitButtonDisabled: {
     opacity: 0.5,
     backgroundColor: '#b2b2b2',
+  },
+  submitButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  submitLoader: {
+    marginRight: 4,
   },
   submitButtonText: {
     color: '#fff',

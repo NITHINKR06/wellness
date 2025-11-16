@@ -48,11 +48,11 @@ See [client/README.md](./client/README.md) for detailed frontend setup.
 
 ## 📱 Features
 
-- **Questionnaire Interface**: 8-question PPD risk assessment
+- **Questionnaire Interface**: 9-question PPD risk assessment
 - **Risk Calculation**: Automated risk assessment based on responses
 - **Results History**: View and track all previous assessments
-- **Backend Integration**: Persistent storage with MongoDB
-- **Offline Support**: Works offline with local state fallback
+- **MongoDB Storage**: All data is securely stored in MongoDB only (no local storage)
+- **Real-time Sync**: Results are automatically fetched from MongoDB on app startup
 
 ## 🛠 Technology Stack
 
@@ -90,9 +90,10 @@ npm start
 
 ## 📝 Notes
 
-- The app works offline and falls back to local state if backend is unavailable
-- All submissions are saved to both backend and local state for redundancy
-- Results are automatically fetched from backend on app startup
+- **Data Storage**: All questionnaire responses are stored exclusively in MongoDB
+- **No Local Storage**: The app does not use AsyncStorage or localStorage - MongoDB is the single source of truth
+- **Error Handling**: If MongoDB is unavailable, assessments cannot be saved until connection is restored
+- **Results Sync**: Results are automatically fetched from MongoDB when the app starts
 
 ## 📄 License
 

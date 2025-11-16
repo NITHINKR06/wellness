@@ -21,15 +21,16 @@ export default function App() {
   useEffect(() => {
     const loadData = async () => {
       const startTime = Date.now();
-      const minLoadingTime = 1000; // Reduced to 1 second minimum
+      const minLoadingTime = 1200; // 1.2 seconds minimum for smooth UX
       
       try {
-        // Fetch existing results from backend with timeout
+        // Fetch existing results from MongoDB (single source of truth)
         const responses = await fetchAllResponses();
         setResultsHistory(responses);
       } catch (error) {
-        console.error('Failed to load results from backend:', error);
+        console.error('Failed to load results from MongoDB:', error);
         // Continue with empty results if backend is not available
+        // Data is only stored in MongoDB, so we show empty state
       } finally {
         // Ensure minimum loading time for smooth UX
         const elapsed = Date.now() - startTime;
@@ -56,21 +57,22 @@ export default function App() {
       
       // Automatically navigate to results screen after successful submission
       setCurrentScreen('results');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit questionnaire to MongoDB:', error);
+      const errorMessage = error?.message || 'An unknown error occurred. Please try again.';
       Alert.alert(
         'Submission Failed',
-        'Your questionnaire could not be saved to the database. Please check your internet connection and try again. Your data will not be saved until submission succeeds.',
+        `${errorMessage}\n\nAll data is stored securely in MongoDB only. Your assessment will not be saved until the connection succeeds.`,
         [
+          { 
+            text: 'Cancel', 
+            style: 'cancel'
+          },
           { 
             text: 'Retry', 
             onPress: () => handleSubmit(result),
             style: 'default'
           },
-          { 
-            text: 'Cancel', 
-            style: 'cancel'
-          }
         ]
       );
       // Do NOT add to local state - data must be in MongoDB first
@@ -100,13 +102,17 @@ export default function App() {
   // Handle deletion of a response
   const handleDelete = async (id: string) => {
     try {
-      // Refresh the list from backend (which will exclude deleted items)
+      // Refresh the list from MongoDB (which will exclude deleted items)
+      // All data is stored in MongoDB only, so we refresh from there
       const responses = await fetchAllResponses();
       setResultsHistory(responses);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to refresh results after deletion:', error);
-      // Remove from local state as fallback
+      // On error, optimistically update local state (deletion likely succeeded)
+      // But show a warning that sync may be needed
       setResultsHistory((prev) => prev.filter((r) => r.id !== id));
+      // Note: In a production app, you might want to show a toast here
+      // indicating that deletion may need to be retried
     }
   };
 

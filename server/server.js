@@ -31,7 +31,14 @@ mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log('✅ Connected to MongoDB successfully');
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    // Listen on all network interfaces (0.0.0.0) to allow connections from devices/emulators
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📱 Accessible at:`);
+      console.log(`   - Local: http://localhost:${PORT}/api`);
+      console.log(`   - Network: http://<your-ip>:${PORT}/api`);
+      console.log(`   - Android Emulator: http://10.0.2.2:${PORT}/api`);
+    });
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);

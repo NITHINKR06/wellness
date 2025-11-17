@@ -23,173 +23,97 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      {/* Unique Home Header - Different from Questionnaire */}
-      <View style={styles.header}>
-        <View style={styles.headerBackground} />
-        <View style={styles.headerCircle1} />
-        <View style={styles.headerCircle2} />
-        <View style={styles.headerCircle3} />
-        <View style={styles.headerContent}>
-          <View style={styles.headerTopSection}>
-            <View style={styles.headerLogoContainer}>
-              <View style={styles.headerLogo}>
-                <Ionicons name="heart" size={40} color="#fff" />
-              </View>
-            </View>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>Welcome</Text>
-              <Text style={styles.headerSubtitle}>PPD Risk Assessment</Text>
-            </View>
-          </View>
-          <Text style={styles.headerDescription}>
-            Your trusted companion for mental wellness during pregnancy and postpartum
-          </Text>
-        </View>
-      </View>
-
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-
-        {/* Quick Stats Section (if results exist) */}
-        {resultsCount > 0 && (
-          <View style={styles.statsCard}>
-            <View style={styles.statsHeader}>
-              <Ionicons name="analytics" size={20} color="#667eea" />
-              <Text style={styles.statsTitle}>Your Progress</Text>
-            </View>
-            <View style={styles.statsContent}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{resultsCount}</Text>
-                <Text style={styles.statLabel}>
-                  {resultsCount === 1 ? 'Assessment' : 'Assessments'}
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Ionicons name="checkmark-circle" size={24} color="#27ae60" />
-                <Text style={styles.statLabel}>Tracked</Text>
-              </View>
-            </View>
+        {/* Top Illustration Section */}
+        <View style={styles.illustrationSection}>
+          {/* Decorative Leaves - Top Corners */}
+          <View style={[styles.leaf, styles.leafTopLeft]}>
+            <Ionicons name="leaf" size={24} color="#4ecdc4" />
           </View>
-        )}
-
-        {/* Enhanced Navigation Buttons */}
-        <View style={styles.navigationSection}>
-          {/* Primary Action - Start Assessment */}
-          <TouchableOpacity
-            style={styles.primaryNavButton}
-            onPress={onNavigateToQuestionnaire}
-            activeOpacity={0.85}
-          >
-            <View style={styles.primaryButtonContent}>
-              <View style={styles.primaryButtonLeft}>
-                <View style={styles.primaryIconContainer}>
-                  <Ionicons name="clipboard" size={36} color="#fff" />
-                </View>
-                <View style={styles.primaryButtonTextContainer}>
-                  <Text style={styles.primaryButtonTitle}>Start Assessment</Text>
-                  <Text style={styles.primaryButtonSubtitle}>
-                    Complete questionnaire • 5-10 minutes
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.primaryButtonArrow}>
-                <Ionicons name="arrow-forward-circle" size={32} color="#fff" />
-              </View>
-            </View>
-            <View style={styles.primaryButtonAccent} />
-          </TouchableOpacity>
-
-          {/* Secondary Action - View Results */}
-          <TouchableOpacity
-            style={[
-              styles.secondaryNavButton,
-              resultsCount === 0 && styles.secondaryNavButtonDisabled
-            ]}
-            onPress={onNavigateToResults}
-            activeOpacity={0.85}
-            disabled={resultsCount === 0}
-          >
-            <View style={styles.secondaryButtonContent}>
-              <View style={styles.secondaryButtonLeft}>
-                <View style={styles.secondaryIconContainer}>
-                  <Ionicons name="stats-chart" size={32} color="#667eea" />
-                  {resultsCount > 0 && (
-                    <View style={styles.resultsBadge}>
-                      <Text style={styles.resultsBadgeText}>{resultsCount}</Text>
-                    </View>
-                  )}
-                </View>
-                <View style={styles.secondaryButtonTextContainer}>
-                  <Text style={styles.secondaryButtonTitle}>View Results</Text>
-                  <Text style={styles.secondaryButtonSubtitle}>
-                    {resultsCount > 0 
-                      ? `${resultsCount} ${resultsCount === 1 ? 'assessment' : 'assessments'} available`
-                      : 'Complete an assessment first'
-                    }
-                  </Text>
-                </View>
-              </View>
-              <Ionicons 
-                name="chevron-forward" 
-                size={24} 
-                color={resultsCount > 0 ? "#667eea" : "#bdc3c7"} 
-              />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Enhanced Info Cards */}
-        <View style={styles.infoSection}>
-          <View style={styles.infoCard}>
-            <View style={styles.infoCardHeader}>
-              <View style={[styles.infoIconContainer, styles.infoIconContainer1]}>
-                <Ionicons name="shield-checkmark" size={26} color="#667eea" />
-              </View>
-            </View>
-            <Text style={styles.infoTitle}>100% Confidential</Text>
-            <Text style={styles.infoText}>
-              Your responses are encrypted and kept completely private
-            </Text>
+          <View style={[styles.leaf, styles.leafTopRight]}>
+            <Ionicons name="leaf" size={20} color="#4ecdc4" />
           </View>
 
-          <View style={styles.infoCard}>
-            <View style={styles.infoCardHeader}>
-              <View style={[styles.infoIconContainer, styles.infoIconContainer2]}>
-                <Ionicons name="time" size={26} color="#667eea" />
+          {/* Main Illustration Container */}
+          <View style={styles.brainContainer}>
+            {/* Central Brain/Heart */}
+            <View style={styles.brain}>
+              <Ionicons name="heart" size={60} color="#ffb3d1" />
+            </View>
+
+            {/* Connection Line to Lightbulb */}
+            <View style={styles.connectionLineLeft} />
+
+            {/* Lightbulb on Left */}
+            <View style={styles.lightbulbContainer}>
+              <View style={styles.lightbulb}>
+                <Ionicons name="bulb" size={32} color="#ffd93d" />
               </View>
             </View>
-            <Text style={styles.infoTitle}>Quick & Easy</Text>
-            <Text style={styles.infoText}>
-              Takes only 5-10 minutes to complete the assessment
-            </Text>
+
+            {/* Connection Line to Gears */}
+            <View style={styles.connectionLineRight} />
+
+            {/* Gears on Right */}
+            <View style={styles.gearsContainer}>
+              <View style={styles.gear1}>
+                <Ionicons name="settings" size={20} color="#636e72" />
+              </View>
+              <View style={styles.gear2}>
+                <Ionicons name="settings" size={16} color="#636e72" />
+              </View>
+            </View>
+
+            {/* Decorative Dots */}
+            <View style={[styles.dot, styles.dot1]} />
+            <View style={[styles.dot, styles.dot2]} />
+            <View style={[styles.dot, styles.dot3]} />
+            <View style={[styles.dot, styles.dot4]} />
+            <View style={[styles.dot, styles.dot5]} />
+          </View>
+
+          {/* Decorative Leaves around brain */}
+          <View style={[styles.leaf, styles.leafLeft]}>
+            <Ionicons name="leaf" size={18} color="#4ecdc4" />
+          </View>
+          <View style={[styles.leaf, styles.leafRight]}>
+            <Ionicons name="leaf" size={16} color="#4ecdc4" />
           </View>
         </View>
 
-        {/* Resources Button */}
-        {onNavigateToResources && (
-          <TouchableOpacity
-            style={styles.resourcesButton}
-            onPress={onNavigateToResources}
-            activeOpacity={0.85}
-          >
-            <View style={styles.resourcesButtonContent}>
-              <View style={styles.resourcesIconContainer}>
-                <Ionicons name="help-circle" size={28} color="#6c5ce7" />
-              </View>
-              <View style={styles.resourcesButtonTextContainer}>
-                <Text style={styles.resourcesButtonTitle}>Resources & Support</Text>
-                <Text style={styles.resourcesButtonSubtitle}>
-                  Mental health hotlines, self-care tips, and guidance
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={24} color="#6c5ce7" />
-            </View>
-          </TouchableOpacity>
-        )}
+        {/* Title Section */}
+        <View style={styles.titleSection}>
+          <Text style={styles.mainTitle}>Take Care Of Your Mental</Text>
+          <Text style={styles.descriptionText}>
+            Are you feeling overwhelmed by anxiety and stress? Our app will help you find calm and balance in your day to day life.
+          </Text>
+        </View>
+
+        {/* Bottom Leaves */}
+        <View style={styles.bottomLeaves}>
+          <View style={[styles.leaf, styles.leafBottomLeft]}>
+            <Ionicons name="leaf" size={22} color="#4ecdc4" />
+          </View>
+          <View style={[styles.leaf, styles.leafBottomRight]}>
+            <Ionicons name="leaf" size={20} color="#4ecdc4" />
+          </View>
+        </View>
+
+        {/* Primary CTA Button */}
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={onNavigateToQuestionnaire}
+          activeOpacity={0.8}
+        >
+          <View style={styles.buttonGradient}>
+            <Text style={styles.primaryButtonText}>Start Now</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          </View>
+        </TouchableOpacity>
 
         <View style={styles.footerSpacer} />
       </ScrollView>
@@ -200,445 +124,305 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    backgroundColor: 'transparent',
-    paddingTop: 60,
-    paddingBottom: 50,
-    paddingHorizontal: 20,
-    position: 'relative',
-    overflow: 'hidden',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#667eea',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  headerCircle1: {
-    position: 'absolute',
-    top: -80,
-    right: -80,
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  headerCircle2: {
-    position: 'absolute',
-    top: 100,
-    left: -60,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  headerCircle3: {
-    position: 'absolute',
-    bottom: -40,
-    right: 40,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  headerContent: {
-    zIndex: 1,
-    position: 'relative',
-  },
-  headerTopSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  headerLogoContainer: {
-    marginRight: 16,
-  },
-  headerLogo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  headerSubtitle: {
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '600',
-  },
-  headerDescription: {
-    fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 22,
-    paddingTop: 4,
+    backgroundColor: '#faf8f5',
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
-    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 24,
+    alignItems: 'center',
   },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    gap: 12,
+  illustrationSection: {
+    width: '100%',
+    height: 300,
+    position: 'relative',
+    marginBottom: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  quickActionCard: {
-    flex: 1,
+  brainContainer: {
+    width: '100%',
+    height: 250,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  brain: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#ffe0e8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffb3d1',
+    shadowColor: '#ffb3d1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 3,
+    left: '50%',
+    top: '50%',
+    marginLeft: -55,
+    marginTop: -55,
+  },
+  connectionLineLeft: {
+    position: 'absolute',
+    left: 50,
+    top: '50%',
+    width: 50,
+    height: 2,
+    backgroundColor: '#95a5a6',
+    zIndex: 1,
+    marginTop: -1,
+  },
+  lightbulbContainer: {
+    position: 'absolute',
+    left: 20,
+    top: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    marginTop: -28,
+  },
+  lightbulb: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#ffd93d',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  connectionLineRight: {
+    position: 'absolute',
+    right: 50,
+    top: '50%',
+    width: 50,
+    height: 2,
+    backgroundColor: '#95a5a6',
+    zIndex: 1,
+    marginTop: -1,
+  },
+  gearsContainer: {
+    position: 'absolute',
+    right: 20,
+    top: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    marginTop: -40,
+  },
+  gear1: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  gear2: {
+    width: 36,
+    height: 36,
     borderRadius: 18,
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    minHeight: 100,
-  },
-  quickActionText: {
-    fontSize: 13,
-    color: '#2d3436',
-    fontWeight: '600',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  statsCard: {
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  statsHeader: {
-    flexDirection: 'row',
+  dot: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  dot1: {
+    top: 30,
+    left: 80,
+    backgroundColor: '#4ecdc4',
+  },
+  dot2: {
+    top: 70,
+    right: 70,
+    backgroundColor: '#c0392b',
+  },
+  dot3: {
+    bottom: 80,
+    left: 60,
+    backgroundColor: '#95e1d3',
+  },
+  dot4: {
+    bottom: 50,
+    right: 80,
+    backgroundColor: '#ff6b9d',
+  },
+  dot5: {
+    top: 100,
+    left: 120,
+    backgroundColor: '#3498db',
+  },
+  leaf: {
+    position: 'absolute',
+  },
+  leafTopLeft: {
+    top: 20,
+    left: 20,
+  },
+  leafTopRight: {
+    top: 30,
+    right: 20,
+  },
+  leafLeft: {
+    left: 20,
+    top: '45%',
+  },
+  leafRight: {
+    right: 20,
+    top: '55%',
+  },
+  titleSection: {
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 10,
+    marginBottom: 40,
+    paddingHorizontal: 20,
   },
-  statsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2d3436',
-  },
-  statsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  statValue: {
+  mainTitle: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#667eea',
+    color: '#2d3436',
+    textAlign: 'center',
+    marginBottom: 20,
+    letterSpacing: 0.5,
   },
-  statLabel: {
-    fontSize: 13,
+  descriptionText: {
+    fontSize: 16,
     color: '#636e72',
-    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 10,
   },
-  statDivider: {
-    width: 1,
+  bottomLeaves: {
+    width: '100%',
     height: 40,
-    backgroundColor: '#e9ecef',
+    position: 'relative',
+    marginBottom: 32,
   },
-  navigationSection: {
-    marginBottom: 24,
-    gap: 16,
+  leafBottomLeft: {
+    left: 0,
+    bottom: 0,
   },
-  primaryNavButton: {
-    borderRadius: 24,
+  leafBottomRight: {
+    right: 0,
+    bottom: 0,
+  },
+  primaryButton: {
+    width: '100%',
+    borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#667eea',
+    marginBottom: 24,
+    shadowColor: '#ff6b9d',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 8,
-    position: 'relative',
   },
-  primaryButtonContent: {
-    backgroundColor: '#667eea',
-    padding: 24,
+  buttonGradient: {
+    backgroundColor: '#ff7ba3',
+    paddingVertical: 18,
+    paddingHorizontal: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  primaryButtonLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 16,
-    minWidth: 0,
-  },
-  primaryIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: 12,
   },
-  primaryButtonTextContainer: {
-    flex: 1,
-    minWidth: 0,
-  },
-  primaryButtonTitle: {
-    fontSize: 22,
+  primaryButtonText: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 6,
   },
-  primaryButtonSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 20,
-  },
-  primaryButtonArrow: {
-    marginLeft: 8,
-    flexShrink: 0,
-  },
-  primaryButtonAccent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  secondaryNavButton: {
+  secondaryButton: {
+    width: '100%',
     backgroundColor: '#fff',
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 20,
-    borderWidth: 2,
-    borderColor: '#667eea',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  secondaryNavButtonDisabled: {
-    borderColor: '#e0e0e0',
-    opacity: 0.7,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   secondaryButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  secondaryButtonLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
     gap: 16,
-    minWidth: 0,
   },
-  secondaryIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#f0f2ff',
+  secondaryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f0f0ff',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    flexShrink: 0,
   },
-  resultsBadge: {
+  badge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    minWidth: 28,
-    height: 28,
-    borderRadius: 14,
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#e74c3c',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    borderWidth: 3,
+    paddingHorizontal: 5,
+    borderWidth: 2,
     borderColor: '#fff',
   },
-  resultsBadgeText: {
-    fontSize: 13,
+  badgeText: {
+    fontSize: 10,
     color: '#fff',
     fontWeight: 'bold',
   },
-  secondaryButtonTextContainer: {
+  secondaryButtonText: {
     flex: 1,
     minWidth: 0,
   },
   secondaryButtonTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#2d3436',
     marginBottom: 4,
   },
   secondaryButtonSubtitle: {
-    fontSize: 14,
-    color: '#636e72',
-    lineHeight: 20,
-  },
-  infoSection: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  infoCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-    alignItems: 'flex-start',
-  },
-  infoCardHeader: {
-    marginBottom: 12,
-  },
-  infoIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  infoIconContainer1: {
-    backgroundColor: '#f0f2ff',
-  },
-  infoIconContainer2: {
-    backgroundColor: '#fff5f0',
-  },
-  infoTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#2d3436',
-    marginBottom: 8,
-    textAlign: 'left',
-  },
-  infoText: {
     fontSize: 13,
     color: '#636e72',
-    textAlign: 'left',
-    lineHeight: 20,
-  },
-  featuresSection: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
-  featureCard: {
-    flex: 1,
-    minWidth: '30%',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-  featureText: {
-    fontSize: 12,
-    color: '#636e72',
-    fontWeight: '600',
-    flex: 1,
+    lineHeight: 18,
   },
   footerSpacer: {
     height: 20,
-  },
-  resourcesButton: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: '#6c5ce7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  resourcesButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  resourcesIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#f0f2ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  resourcesButtonTextContainer: {
-    flex: 1,
-  },
-  resourcesButtonTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2d3436',
-    marginBottom: 4,
-  },
-  resourcesButtonSubtitle: {
-    fontSize: 14,
-    color: '#636e72',
-    lineHeight: 20,
   },
 });
 

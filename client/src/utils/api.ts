@@ -14,7 +14,7 @@ import { Platform } from 'react-native';
 
 // Set USE_EMULATOR to true if using Android Emulator, false for physical device
 const USE_EMULATOR = false; // Change to true for Android emulator
-const LOCAL_IP_ADDRESS = '192.168.0.108'; // Your WiFi IP address (found via ipconfig)
+const LOCAL_IP_ADDRESS = '192.168.0.109'; // Your WiFi IP address (found via ipconfig)
 
 const getApiBaseUrl = () => {
   if (__DEV__) {
@@ -59,8 +59,9 @@ const mapToBackendFormat = (questionnaireResponses: QuestionnaireResponse) => {
   );
   // Support: only count as false (lack of support) if explicitly answered as false
   // If not answered (undefined), treat as null/undefined so it doesn't count as a risk factor
+  // q9 mapping: true (Yes) = has adequate support, false (No) = lacks support, undefined = not answered
   const support = questionnaireResponses.hasOwnProperty('q9') 
-    ? questionnaireResponses['q9'] === true  // Explicitly answered: true = adequate support
+    ? questionnaireResponses['q9']  // If q9 exists, use its value directly (true = adequate support, false = lack of support)
     : null; // Not answered: don't count as risk factor
   const history = questionnaireResponses['q8'] === true; // Thoughts of harming (only true if explicitly answered)
 
@@ -83,23 +84,35 @@ const fetchWithTimeout = (url: string, options: RequestInit, timeout = 5000): Pr
  * Map backend response to frontend format
  */
 const mapFromBackendFormat = (backendResponse: any): AssessmentResult => {
-  // Reconstruct questionnaireResponses from backend fields
-  // Note: This is a best-effort reconstruction since we can't perfectly reverse
-  // the OR logic used in mapping multiple questions to a single field
-  const questionnaireResponses: QuestionnaireResponse = {
-    q4: backendResponse.appetite,
-    q1: backendResponse.mood, // If mood is true, at least one of q1,q2,q3,q5,q6,q7 was true
-    q2: backendResponse.mood,
-    q3: backendResponse.mood, // Now included in mood calculation
-    q5: backendResponse.mood,
-    q6: backendResponse.mood,
-    q7: backendResponse.mood,
-    q8: backendResponse.history,
-    // Only include q9 if support was explicitly answered (not null)
-    ...(backendResponse.support !== null && backendResponse.support !== undefined && {
-      q9: backendResponse.support // Support question (true = adequate support, false = lack of support)
-    }),
-  };
+  // Use stored individual question responses if available (preferred method)
+  // Otherwise, fall back to reconstruction from aggregated fields (for backward compatibility)
+  let questionnaireResponses: QuestionnaireResponse = {};
+  
+  if (backendResponse.questionnaireResponses && 
+      typeof backendResponse.questionnaireResponses === 'object' &&
+      !Array.isArray(backendResponse.questionnaireResponses)) {
+    // Use stored individual responses (most accurate)
+    // MongoDB Map type is serialized as a plain object in JSON responses
+    questionnaireResponses = { ...backendResponse.questionnaireResponses };
+  } else {
+    // Fallback: Reconstruct from aggregated fields (for old records without individual responses)
+    // Note: This is a best-effort reconstruction since we can't perfectly reverse
+    // the OR logic used in mapping multiple questions to a single field
+    questionnaireResponses = {
+      q4: backendResponse.appetite,
+      q1: backendResponse.mood, // If mood is true, at least one of q1,q2,q3,q5,q6,q7 was true
+      q2: backendResponse.mood,
+      q3: backendResponse.mood, // Now included in mood calculation
+      q5: backendResponse.mood,
+      q6: backendResponse.mood,
+      q7: backendResponse.mood,
+      q8: backendResponse.history,
+      // Only include q9 if support was explicitly answered (not null)
+      ...(backendResponse.support !== null && backendResponse.support !== undefined && {
+        q9: backendResponse.support // Support question (true = adequate support, false = lack of support)
+      }),
+    };
+  }
 
   return {
     id: backendResponse._id || backendResponse.id,
@@ -123,20 +136,30 @@ export const submitQuestionnaire = async (
       assessmentResult.questionnaireResponses
     );
 
+    // Debug: Log the mapping to verify correctness
+    if (__DEV__) {
+      console.log('[API] Frontend responses:', assessmentResult.questionnaireResponses);
+      console.log('[API] Mapped to backend:', { appetite, mood, support, history });
+    }
+
+    const requestBody = {
+      stage: assessmentResult.stage,
+      region: assessmentResult.region,
+      sleepHours: assessmentResult.sleepHours,
+      appetite,
+      mood,
+      support, // This should be null if q9 is not answered, true if q9 is true, false if q9 is false
+      history,
+      // Send individual question responses for accurate storage and reconstruction
+      questionnaireResponses: assessmentResult.questionnaireResponses,
+    };
+
     const response = await fetchWithTimeout(`${API_BASE_URL}/questionnaire`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        stage: assessmentResult.stage,
-        region: assessmentResult.region,
-        sleepHours: assessmentResult.sleepHours,
-        appetite,
-        mood,
-        support,
-        history,
-      }),
+      body: JSON.stringify(requestBody),
     }, 10000); // 10 second timeout for POST
 
     if (!response.ok) {
@@ -162,14 +185,22 @@ export const submitQuestionnaire = async (
     }
     return mapFromBackendFormat(data.data);
   } catch (error: any) {
+    // Check if it's a network error (backend not available)
+    const isNetworkError = 
+      error.message === 'Request timeout' ||
+      error.message?.includes('NetworkError') ||
+      error.message?.includes('fetch failed') ||
+      error.message?.includes('Network request failed') ||
+      error?.name === 'TypeError' ||
+      error?.toString()?.includes('Network request failed');
+    
+    // Provide user-friendly error messages
+    if (isNetworkError) {
+      throw new Error('Cannot connect to server. Please ensure the backend is running and check your internet connection.');
+    }
+    
+    // Log other errors (unexpected errors) - network errors are handled above
     console.error('Error submitting questionnaire:', error);
-    // Provide more user-friendly error messages
-    if (error.message === 'Request timeout') {
-      throw new Error('Request timed out. Please check your internet connection and try again.');
-    }
-    if (error.message.includes('NetworkError') || error.message.includes('fetch failed')) {
-      throw new Error('Cannot connect to server. Please check your internet connection.');
-    }
     throw error;
   }
 };
@@ -208,15 +239,24 @@ export const fetchAllResponses = async (): Promise<AssessmentResult[]> => {
     }
     return data.data.map(mapFromBackendFormat);
   } catch (error: any) {
-    console.error('Error fetching responses:', error);
-    // Provide user-friendly error messages
-    if (error.message === 'Request timeout') {
-      throw new Error('Request timed out. Please check your internet connection.');
-    }
-    if (error.message.includes('NetworkError') || error.message.includes('fetch failed')) {
-      // Return empty array on network error (graceful degradation)
+    // Check if it's a network error (backend not available)
+    const isNetworkError = 
+      error.message === 'Request timeout' ||
+      error.message?.includes('NetworkError') ||
+      error.message?.includes('fetch failed') ||
+      error.message?.includes('Network request failed') ||
+      error?.name === 'TypeError' ||
+      error?.toString()?.includes('Network request failed');
+    
+    if (isNetworkError) {
+      // Silently return empty array on network error (backend not available)
+      // This is expected behavior when backend server is not running
+      // No logging needed - this is normal when backend is offline
       return [];
     }
+    
+    // Log other errors (unexpected errors)
+    console.error('Error fetching responses:', error);
     throw error;
   }
 };

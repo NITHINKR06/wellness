@@ -10,6 +10,13 @@ const ResponseSchema = new mongoose.Schema({
   history: { type: Boolean, required: true },
   resultLabel: { type: String, required: true },
   score: { type: Number, required: true },
+  // Store individual question responses for accurate reconstruction
+  // Using Schema.Types.Mixed to store a plain object with q1-q9 keys
+  questionnaireResponses: {
+    type: Map,
+    of: Boolean,
+    default: new Map()
+  },
   deleted: { type: Boolean, default: false }, // Soft delete flag
   createdAt: { type: Date, default: Date.now }
 });

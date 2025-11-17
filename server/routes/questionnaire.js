@@ -28,7 +28,10 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { stage, region, sleepHours, appetite, mood, support, history } = req.body;
+      const { stage, region, sleepHours, appetite, mood, support, history, questionnaireResponses } = req.body;
+
+      // Debug: Log received data
+      console.log('[Backend] Received data:', { stage, region, sleepHours, appetite, mood, support, history, questionnaireResponses });
 
       // Calculate score (count of positive risk factors)
       // Note: support field handling:
@@ -39,11 +42,26 @@ router.post(
       const supportRiskFactor = support === false ? true : false; // Only count if explicitly false (lack of support)
       const positiveCount = [appetite, mood, supportRiskFactor, history].filter(Boolean).length;
       
+      // Debug: Log calculation
+      console.log('[Backend] Risk calculation:', {
+        appetite,
+        mood,
+        support,
+        supportRiskFactor,
+        history,
+        positiveCount
+      });
+      
       // Determine result label based on score
       // If 2 or more positive risk factors, it's "Possible PPD Risk"
       const resultLabel = positiveCount >= 2 ? 'Possible PPD Risk' : 'Low Risk';
 
       // Create new response
+      // Convert questionnaireResponses plain object to Map for Mongoose
+      const questionnaireResponsesMap = questionnaireResponses 
+        ? new Map(Object.entries(questionnaireResponses))
+        : new Map();
+      
       const response = new Response({
         stage,
         region,
@@ -54,6 +72,8 @@ router.post(
         history,
         resultLabel,
         score: positiveCount,
+        // Store individual question responses if provided
+        questionnaireResponses: questionnaireResponsesMap,
       });
 
       // Save to MongoDB - this is the single source of truth for all data

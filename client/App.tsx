@@ -30,8 +30,17 @@ export default function App() {
         // Fetch existing results from MongoDB (single source of truth)
         const responses = await fetchAllResponses();
         setResultsHistory(responses);
-      } catch (error) {
-        console.error('Failed to load results from MongoDB:', error);
+      } catch (error: any) {
+        // fetchAllResponses already handles network errors gracefully
+        // Only log unexpected errors here
+        const isNetworkError = 
+          error?.message?.includes('Network') ||
+          error?.message?.includes('fetch failed') ||
+          error?.name === 'TypeError';
+        
+        if (!isNetworkError) {
+          console.error('Failed to load results from MongoDB:', error);
+        }
         // Continue with empty results if backend is not available
         // Data is only stored in MongoDB, so we show empty state
       } finally {
@@ -61,7 +70,17 @@ export default function App() {
       // Automatically navigate to results screen after successful submission
       setCurrentScreen('results');
     } catch (error: any) {
-      console.error('Failed to submit questionnaire to MongoDB:', error);
+      // Only log unexpected errors (network errors already have user-friendly messages)
+      const isNetworkError = 
+        error?.message?.includes('Cannot connect to server') ||
+        error?.message?.includes('Network') ||
+        error?.message?.includes('fetch failed') ||
+        error?.name === 'TypeError';
+      
+      if (!isNetworkError) {
+        console.error('Failed to submit questionnaire to MongoDB:', error);
+      }
+      
       const errorMessage = error?.message || 'An unknown error occurred. Please try again.';
       Alert.alert(
         'Submission Failed',

@@ -58,8 +58,7 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
   const formatDate = (date: Date) => {
     const d = typeof date === 'string' ? new Date(date) : date;
     return d.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
@@ -72,18 +71,6 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
       minute: '2-digit',
     });
   };
-
-  const riskColors = isRisk 
-    ? {
-        primary: '#e74c3c',
-        light: '#fee',
-        iconBg: '#fee5e5',
-      }
-    : {
-        primary: '#27ae60',
-        light: '#e8f8f0',
-        iconBg: '#e6f7f0',
-      };
 
   return (
     <View style={styles.container}>
@@ -104,80 +91,81 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
         showsVerticalScrollIndicator={false}
       >
         {/* Risk Summary Card */}
-        <View style={[styles.summaryCard, { borderTopColor: riskColors.primary }]}>
-          <View style={styles.summaryHeader}>
-            <View style={[styles.riskBadge, { backgroundColor: riskColors.light }]}>
-              <Ionicons 
-                name={isRisk ? "alert-circle" : "checkmark-circle"} 
-                size={24} 
-                color={riskColors.primary}
-              />
-              <Text style={[styles.riskText, { color: riskColors.primary }]}>
-                {result.riskResult}
-              </Text>
-            </View>
+        <View style={styles.summaryCard}>
+          <View style={[styles.riskBadge, isRisk ? styles.riskBadgeHigh : styles.riskBadgeLow]}>
+            <Ionicons 
+              name={isRisk ? "alert-circle" : "checkmark-circle"} 
+              size={20} 
+              color={isRisk ? "#e74c3c" : "#27ae60"}
+            />
+            <Text style={[styles.riskText, isRisk ? styles.riskTextHigh : styles.riskTextLow]}>
+              {result.riskResult}
+            </Text>
           </View>
 
           <View style={styles.scoreSection}>
-            <Text style={styles.scoreTitle}>Risk Score: {score}/4</Text>
-            <Text style={styles.scoreSubtitle}>
-              Points came from: {factors.length > 0 ? factors.join(', ') : 'None'}
-            </Text>
-            <View style={styles.scoreBarContainer}>
-              <View style={[styles.scoreBarBackground, { backgroundColor: riskColors.light }]}>
+            <Text style={styles.scoreLabel}>Risk Score</Text>
+            <View style={styles.scoreRow}>
+              <Text style={[styles.scoreValue, isRisk ? styles.scoreValueRisk : styles.scoreValueLow]}>
+                {score}/4
+              </Text>
+              <View style={styles.scoreBarContainer}>
                 <View 
                   style={[
-                    styles.scoreBarFill, 
+                    styles.scoreBar, 
                     { 
                       width: `${(score / 4) * 100}%`,
-                      backgroundColor: riskColors.primary,
+                      backgroundColor: isRisk ? '#e74c3c' : '#27ae60',
                     }
                   ]} 
                 />
               </View>
             </View>
+            {factors.length > 0 && (
+              <Text style={styles.factorsText}>
+                Risk factors: {factors.join(', ')}
+              </Text>
+            )}
           </View>
         </View>
 
         {/* Personal Information */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="information-circle" size={22} color="#6c5ce7" />
-            <Text style={styles.sectionTitle}>Personal Information</Text>
-          </View>
-          <View style={styles.infoGrid}>
-            <View style={styles.infoItem}>
-              <Ionicons name="flag" size={18} color="#636e72" />
-              <Text style={styles.infoLabel}>Stage</Text>
-              <Text style={styles.infoValue}>{result.stage}</Text>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <View style={styles.infoItem}>
+                <Ionicons name="flag-outline" size={18} color="#636e72" />
+                <Text style={styles.infoLabel}>Stage</Text>
+                <Text style={styles.infoValue}>{result.stage}</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Ionicons name="location-outline" size={18} color="#636e72" />
+                <Text style={styles.infoLabel}>Region</Text>
+                <Text style={styles.infoValue}>{result.region}</Text>
+              </View>
             </View>
-            <View style={styles.infoItem}>
-              <Ionicons name="location" size={18} color="#636e72" />
-              <Text style={styles.infoLabel}>Region</Text>
-              <Text style={styles.infoValue}>{result.region}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Ionicons name="moon" size={18} color="#636e72" />
-              <Text style={styles.infoLabel}>Sleep Hours</Text>
-              <Text style={styles.infoValue}>{result.sleepHours}h</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Ionicons name="time" size={18} color="#636e72" />
-              <Text style={styles.infoLabel}>Time</Text>
-              <Text style={styles.infoValue}>{formatTime(result.timestamp)}</Text>
+            <View style={styles.infoRow}>
+              <View style={styles.infoItem}>
+                <Ionicons name="moon-outline" size={18} color="#636e72" />
+                <Text style={styles.infoLabel}>Sleep Hours</Text>
+                <Text style={styles.infoValue}>{result.sleepHours}h</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Ionicons name="time-outline" size={18} color="#636e72" />
+                <Text style={styles.infoLabel}>Time</Text>
+                <Text style={styles.infoValue}>{formatTime(result.timestamp)}</Text>
+              </View>
             </View>
           </View>
         </View>
 
         {/* Questionnaire Responses */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="list" size={22} color="#6c5ce7" />
-            <Text style={styles.sectionTitle}>Questionnaire Responses</Text>
-          </View>
+          <Text style={styles.sectionTitle}>Questionnaire Responses</Text>
           {Object.entries(result.questionnaireResponses).map(([questionId, answer]) => (
-            <View key={questionId} style={styles.questionItem}>
-              <View style={styles.questionHeader}>
+            <View key={questionId} style={styles.questionCard}>
+              <View style={styles.questionContent}>
                 <Ionicons 
                   name={answer ? "checkmark-circle" : "close-circle"} 
                   size={20} 
@@ -186,24 +174,23 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
                 <Text style={styles.questionText}>{questionLabels[questionId] || questionId}</Text>
               </View>
               <View style={[styles.answerBadge, answer ? styles.answerBadgeYes : styles.answerBadgeNo]}>
-                <Text style={styles.answerText}>{answer ? 'Yes' : 'No'}</Text>
+                <Text style={[styles.answerText, answer ? styles.answerTextYes : styles.answerTextNo]}>
+                  {answer ? 'Yes' : 'No'}
+                </Text>
               </View>
             </View>
           ))}
         </View>
 
-        {/* Factor Breakdown */}
+        {/* Risk Factor Breakdown */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="analytics" size={22} color="#6c5ce7" />
-            <Text style={styles.sectionTitle}>Risk Factor Breakdown</Text>
-          </View>
-          <View style={styles.factorList}>
+          <Text style={styles.sectionTitle}>Risk Factor Breakdown</Text>
+          <View style={styles.factorCard}>
             <View style={styles.factorItem}>
               <Ionicons 
                 name={factors.includes('Appetite') ? "checkmark-circle" : "ellipse-outline"} 
                 size={20} 
-                color={factors.includes('Appetite') ? riskColors.primary : "#ccc"} 
+                color={factors.includes('Appetite') ? "#e74c3c" : "#bdc3c7"} 
               />
               <Text style={[
                 styles.factorText,
@@ -216,7 +203,7 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
               <Ionicons 
                 name={factors.includes('Mood') ? "checkmark-circle" : "ellipse-outline"} 
                 size={20} 
-                color={factors.includes('Mood') ? riskColors.primary : "#ccc"} 
+                color={factors.includes('Mood') ? "#e74c3c" : "#bdc3c7"} 
               />
               <Text style={[
                 styles.factorText,
@@ -229,7 +216,7 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
               <Ionicons 
                 name={factors.includes('Lack of Support') ? "checkmark-circle" : "ellipse-outline"} 
                 size={20} 
-                color={factors.includes('Lack of Support') ? riskColors.primary : "#ccc"} 
+                color={factors.includes('Lack of Support') ? "#e74c3c" : "#bdc3c7"} 
               />
               <Text style={[
                 styles.factorText,
@@ -238,11 +225,11 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
                 Lack of Support
               </Text>
             </View>
-            <View style={styles.factorItem}>
+            <View style={[styles.factorItem, styles.factorItemLast]}>
               <Ionicons 
                 name={factors.includes('History') ? "checkmark-circle" : "ellipse-outline"} 
                 size={20} 
-                color={factors.includes('History') ? riskColors.primary : "#ccc"} 
+                color={factors.includes('History') ? "#e74c3c" : "#bdc3c7"} 
               />
               <Text style={[
                 styles.factorText,
@@ -253,6 +240,8 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
             </View>
           </View>
         </View>
+
+        <View style={styles.footerSpacer} />
       </ScrollView>
     </View>
   );
@@ -261,132 +250,140 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#f8f9fa',
   },
   header: {
     backgroundColor: '#6c5ce7',
     paddingTop: 60,
-    paddingBottom: 24,
+    paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    shadowColor: '#6c5ce7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
     flexDirection: 'row',
     alignItems: 'center',
   },
   backButton: {
     marginRight: 16,
-    padding: 8,
+    padding: 4,
   },
   headerContent: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '500',
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
     padding: 20,
-    paddingTop: 24,
   },
   summaryCard: {
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    borderTopWidth: 4,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-  summaryHeader: {
-    marginBottom: 20,
+    borderColor: '#e9ecef',
   },
   riskBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     gap: 8,
     alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  riskBadgeHigh: {
+    backgroundColor: '#fff5f5',
+  },
+  riskBadgeLow: {
+    backgroundColor: '#f0f9f4',
   },
   riskText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    letterSpacing: 0.3,
+  },
+  riskTextHigh: {
+    color: '#e74c3c',
+  },
+  riskTextLow: {
+    color: '#27ae60',
   },
   scoreSection: {
-    marginTop: 8,
+    marginTop: 4,
   },
-  scoreTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2d3436',
+  scoreLabel: {
+    fontSize: 13,
+    color: '#636e72',
+    fontWeight: '600',
     marginBottom: 8,
   },
-  scoreSubtitle: {
-    fontSize: 14,
-    color: '#636e72',
-    marginBottom: 16,
-    lineHeight: 20,
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  scoreValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    minWidth: 50,
+  },
+  scoreValueRisk: {
+    color: '#e74c3c',
+  },
+  scoreValueLow: {
+    color: '#27ae60',
   },
   scoreBarContainer: {
-    width: '100%',
-  },
-  scoreBarBackground: {
-    height: 16,
-    borderRadius: 8,
+    flex: 1,
+    height: 8,
+    backgroundColor: '#e9ecef',
+    borderRadius: 4,
     overflow: 'hidden',
   },
-  scoreBarFill: {
+  scoreBar: {
     height: '100%',
-    borderRadius: 8,
+    borderRadius: 4,
+  },
+  factorsText: {
+    fontSize: 13,
+    color: '#636e72',
+    lineHeight: 18,
   },
   section: {
     marginBottom: 24,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 10,
-  },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#2d3436',
+    marginBottom: 12,
   },
-  infoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  infoItem: {
-    width: '48%',
+  infoCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
     borderColor: '#e9ecef',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  infoItem: {
+    flex: 1,
   },
   infoLabel: {
     fontSize: 12,
@@ -394,15 +391,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 8,
     marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   infoValue: {
     fontSize: 16,
     color: '#2d3436',
     fontWeight: '700',
   },
-  questionItem: {
+  questionCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
@@ -413,35 +408,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
-  questionHeader: {
+  questionContent: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginRight: 12,
   },
   questionText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     color: '#2d3436',
     lineHeight: 20,
   },
   answerBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 12,
   },
   answerBadgeYes: {
-    backgroundColor: '#e8f8f0',
+    backgroundColor: '#f0f9f4',
   },
   answerBadgeNo: {
-    backgroundColor: '#fee',
+    backgroundColor: '#fff5f5',
   },
   answerText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#2d3436',
   },
-  factorList: {
+  answerTextYes: {
+    color: '#27ae60',
+  },
+  answerTextNo: {
+    color: '#e74c3c',
+  },
+  factorCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
@@ -454,10 +455,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f5',
+    borderBottomColor: '#f0f0f0',
+  },
+  factorItemLast: {
+    borderBottomWidth: 0,
   },
   factorText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#636e72',
     fontWeight: '500',
   },
@@ -465,7 +469,9 @@ const styles = StyleSheet.create({
     color: '#2d3436',
     fontWeight: '700',
   },
+  footerSpacer: {
+    height: 20,
+  },
 });
 
 export default DetailedResultScreen;
-

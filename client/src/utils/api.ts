@@ -158,6 +158,10 @@ export const getQueuedSubmissionCount = async () => {
   return queue.length;
 };
 
+export const queueSubmissionForLater = async (submission: QuestionnaireSubmission) => {
+  await enqueueOfflineSubmission(submission);
+};
+
 /**
  * Map backend response to frontend format
  */

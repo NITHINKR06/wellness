@@ -18,6 +18,7 @@ import {
   flushOfflineQueue,
   OFFLINE_ERROR_CODE,
   deleteResponse,
+  queueSubmissionForLater,
 } from './src/utils/api';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 
@@ -174,10 +175,11 @@ const AppShell = () => {
       if (!isAuthenticated) {
         const localResult = simulateLocalAssessment(submission);
         setResultsHistory((prev) => [localResult, ...prev]);
+        await queueSubmissionForLater(submission);
         setCurrentScreen('results');
         Alert.alert(
           'Temporary result saved',
-          'This assessment is stored on this device only. Create an account to keep your progress backed up across sessions.'
+          'This assessment is stored on this device only for now. Sign in before closing the app to sync it to your account.'
         );
         return;
       }

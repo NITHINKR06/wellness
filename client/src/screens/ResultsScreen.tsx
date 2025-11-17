@@ -7,12 +7,28 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LineChart } from 'react-native-chart-kit';
 import { AssessmentResult } from '../models/result';
-import { deleteResponse } from '../utils/api';
 import { formatDate, formatTime } from '../utils/dateUtils';
-import { calculateRiskScore } from '../utils/riskCalculation';
+
+const screenWidth = Dimensions.get('window').width;
+const chartWidth = screenWidth - 48;
+const chartConfig = {
+  backgroundColor: '#ffffff',
+  backgroundGradientFrom: '#f8f9fa',
+  backgroundGradientTo: '#f8f9fa',
+  decimalPlaces: 1,
+  color: (opacity = 1) => `rgba(108, 92, 231, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(99, 110, 114, ${opacity})`,
+  propsForDots: {
+    r: '4',
+    strokeWidth: '2',
+    stroke: '#6c5ce7',
+  },
+};
 
 interface ResultsScreenProps {
   resultsHistory: AssessmentResult[];
@@ -25,6 +41,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const handleDelete = async (item: AssessmentResult) => {
+    if (!onDelete) return;
     Alert.alert(
       'Delete Assessment',
       'Are you sure you want to delete this assessment?',
@@ -39,10 +56,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
           onPress: async () => {
             try {
               setDeletingId(item.id);
-              await deleteResponse(item.id);
-              if (onDelete) {
-                await onDelete(item.id);
-              }
+              await onDelete(item.id);
             } catch (error) {
               console.error('Error deleting response:', error);
               Alert.alert(
@@ -69,14 +83,42 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
 
   const stats = calculateStats();
 
-  const getRiskScore = (item: AssessmentResult) => {
-    return calculateRiskScore(item.questionnaireResponses);
-  };
+  const chartData = React.useMemo(() => {
+    if (!resultsHistory.length) return null;
+    const sorted = [...resultsHistory].sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+    );
+    const labels = sorted.map((item, index) => {
+      const label = formatDate(item.timestamp).split(',')[0];
+      if (sorted.length <= 4) {
+        return label;
+      }
+      if (index === 0 || index === sorted.length - 1) {
+        return label;
+      }
+      return '';
+    });
+    const dataPoints = sorted.map((item) => item.score ?? 0);
+    return {
+      labels,
+      datasets: [
+        {
+          data: dataPoints,
+          color: (opacity = 1) => `rgba(108, 92, 231, ${opacity})`,
+          strokeWidth: 2,
+        },
+      ],
+    };
+  }, [resultsHistory]);
 
-  const renderResultItem = ({ item, index }: { item: AssessmentResult; index: number }) => {
+  const showTrendChart =
+    !!chartData && chartData.datasets?.[0]?.data && chartData.datasets[0].data.length > 0;
+
+  const renderResultItem = ({ item }: { item: AssessmentResult }) => {
     const isRisk = item.riskResult === 'Possible PPD Risk';
-    const riskScore = getRiskScore(item);
-    const maxScore = 4;
+    const riskScore = item.score ?? 0;
+    const maxScore = item.maxScore || 0;
+    const scoreRatio = maxScore > 0 ? (riskScore / maxScore) * 100 : 0;
     
     return (
       <TouchableOpacity
@@ -106,12 +148,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
         <View style={styles.scoreRow}>
           <View style={styles.scoreInfo}>
             <Text style={styles.scoreLabel}>Risk Score</Text>
-            <Text style={[styles.scoreValue, isRisk ? styles.scoreValueRisk : styles.scoreValueLow]}>
-              {riskScore}/{maxScore}
-            </Text>
+            {maxScore > 0 && (
+              <Text style={[styles.scoreValue, isRisk ? styles.scoreValueRisk : styles.scoreValueLow]}>
+                {riskScore}/{maxScore}
+              </Text>
+            )}
           </View>
           <View style={styles.scoreBarContainer}>
-            <View style={[styles.scoreBar, { width: `${(riskScore / maxScore) * 100}%`, backgroundColor: isRisk ? '#e74c3c' : '#27ae60' }]} />
+            <View style={[styles.scoreBar, { width: `${scoreRatio}%`, backgroundColor: isRisk ? '#e74c3c' : '#27ae60' }]} />
           </View>
         </View>
 
@@ -216,6 +260,25 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
                   <Text style={styles.sleepTitle}>Average Sleep</Text>
                 </View>
                 <Text style={styles.sleepValue}>{averageSleep} hours</Text>
+              </View>
+            )}
+
+            {/* Risk Trend */}
+            {showTrendChart && chartData && (
+              <View style={styles.chartCard}>
+                <Text style={styles.chartTitle}>Risk Trend</Text>
+                <LineChart
+                  data={chartData}
+                  width={chartWidth}
+                  height={220}
+                  chartConfig={chartConfig}
+                  bezier
+                  style={styles.chart}
+                  fromZero
+                  yAxisSuffix=""
+                  withVerticalLines={false}
+                  segments={5}
+                />
               </View>
             )}
 
@@ -342,6 +405,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#6c5ce7',
+  },
+  chartCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2d3436',
+    marginBottom: 12,
+  },
+  chart: {
+    borderRadius: 16,
   },
   resultsSection: {
     marginTop: 4,

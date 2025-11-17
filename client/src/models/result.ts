@@ -16,6 +16,23 @@ export interface QuestionnaireResponse {
   [questionId: string]: boolean;
 }
 
+export interface QuestionnaireSubmission {
+  stage: Stage;
+  region: Region;
+  sleepHours: number;
+  questionnaireResponses: QuestionnaireResponse;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+}
+
 // Complete assessment result
 export interface AssessmentResult {
   id: string;
@@ -24,6 +41,12 @@ export interface AssessmentResult {
   sleepHours: number;
   questionnaireResponses: QuestionnaireResponse;
   riskResult: RiskResult;
+  score: number;
+  maxScore: number;
+  riskFactors: string[];
+  riskThreshold?: number;
+  modelVersion?: string;
+  riskBreakdown?: { [questionId: string]: number };
   timestamp: Date;
 }
 

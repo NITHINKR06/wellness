@@ -2,23 +2,36 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const Response = require('../models/Response');
+const { calculateRiskScore } = require('../utils/riskModel');
+const authMiddleware = require('../middleware/auth');
 
 // POST /api/questionnaire - Submit a questionnaire response
+const QUESTION_IDS = ['q1','q2','q3','q4','q5','q6','q7','q8','q9'];
+
+router.use(authMiddleware);
+
 router.post(
   '/',
   [
     body('stage').notEmpty().withMessage('Stage is required'),
     body('region').notEmpty().withMessage('Region is required'),
     body('sleepHours').isNumeric().withMessage('Sleep hours must be a number'),
-    body('appetite').isBoolean().withMessage('Appetite must be a boolean'),
-    body('mood').isBoolean().withMessage('Mood must be a boolean'),
-    body('support').optional({ nullable: true, checkFalsy: false }).custom((value) => {
-      if (value === null || value === undefined || typeof value === 'boolean') {
+    body('questionnaireResponses')
+      .isObject()
+      .withMessage('questionnaireResponses must be an object with boolean answers')
+      .custom((responses) => {
+        const missing = QUESTION_IDS.filter((id) => !Object.prototype.hasOwnProperty.call(responses, id));
+        if (missing.length) {
+          throw new Error(`Missing responses for: ${missing.join(', ')}`);
+        }
+        const invalid = Object.entries(responses).filter(
+          ([key, value]) => !QUESTION_IDS.includes(key) || typeof value !== 'boolean'
+        );
+        if (invalid.length) {
+          throw new Error('All responses must be booleans for known questions');
+        }
         return true;
-      }
-      throw new Error('Support must be a boolean or null');
-    }),
-    body('history').isBoolean().withMessage('History must be a boolean'),
+      }),
   ],
   async (req, res) => {
     try {
@@ -28,38 +41,53 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { stage, region, sleepHours, appetite, mood, support, history, questionnaireResponses } = req.body;
+      const { stage, region, sleepHours, questionnaireResponses } = req.body;
 
-      // Calculate score (count of positive risk factors)
-      // Note: support field handling:
-      // - true = adequate support (NOT a risk factor)
-      // - false = lack of support (IS a risk factor)
-      // - null/undefined = not answered (NOT a risk factor - don't count it)
-      // So we count !support (lack of support) as a positive risk factor, but only if support is explicitly false
-      const supportRiskFactor = support === false ? true : false; // Only count if explicitly false (lack of support)
-      const positiveCount = [appetite, mood, supportRiskFactor, history].filter(Boolean).length;
-      
-      // Determine result label based on score
-      // If 2 or more positive risk factors, it's "Possible PPD Risk"
-      const resultLabel = positiveCount >= 2 ? 'Possible PPD Risk' : 'Low Risk';
+      const {
+        score,
+        maxScore,
+        threshold,
+        resultLabel,
+        riskFactors,
+        breakdown,
+        normalizedResponses,
+        modelVersion,
+      } = calculateRiskScore(questionnaireResponses);
+
+      const appetite = normalizedResponses.q4 === true;
+      const mood =
+        normalizedResponses.q1 === true ||
+        normalizedResponses.q2 === true ||
+        normalizedResponses.q3 === true ||
+        normalizedResponses.q5 === true ||
+        normalizedResponses.q6 === true ||
+        normalizedResponses.q7 === true;
+      const supportValue = Object.prototype.hasOwnProperty.call(normalizedResponses, 'q9')
+        ? normalizedResponses.q9
+        : null;
+      const history = normalizedResponses.q8 === true;
 
       // Create new response
       // Convert questionnaireResponses plain object to Map for Mongoose
-      const questionnaireResponsesMap = questionnaireResponses 
-        ? new Map(Object.entries(questionnaireResponses))
-        : new Map();
+      const questionnaireResponsesMap = new Map(Object.entries(normalizedResponses));
       
       const response = new Response({
+        userId: req.userId,
         stage,
         region,
         sleepHours: parseFloat(sleepHours),
         appetite,
         mood,
-        support,
+        support: supportValue,
         history,
         resultLabel,
-        score: positiveCount,
-        // Store individual question responses if provided
+        score,
+        maxScore,
+        riskThreshold: threshold,
+        modelVersion,
+        riskFactors,
+        riskBreakdown: new Map(Object.entries(breakdown)),
+        // Store normalized responses to guarantee consistent casing/booleans
         questionnaireResponses: questionnaireResponsesMap,
       });
 
@@ -88,6 +116,7 @@ router.get('/', async (req, res) => {
     // Fetch all non-deleted responses from MongoDB (single source of truth)
     // Filter out deleted items (only show where deleted is not true)
     const responses = await Response.find({ 
+      userId: req.userId,
       deleted: { $ne: true }
     }).sort({ createdAt: -1 });
     res.json({
@@ -109,6 +138,7 @@ router.get('/', async (req, res) => {
 router.get('/stats', async (req, res) => {
   try {
     const responses = await Response.find({ 
+      userId: req.userId,
       deleted: { $ne: true }
     });
 
@@ -199,7 +229,7 @@ router.get('/stats', async (req, res) => {
 // GET /api/questionnaire/:id - Get a specific questionnaire response
 router.get('/:id', async (req, res) => {
   try {
-    const response = await Response.findById(req.params.id);
+    const response = await Response.findOne({ _id: req.params.id, userId: req.userId });
     if (!response) {
       return res.status(404).json({
         success: false,
@@ -230,7 +260,7 @@ router.get('/:id', async (req, res) => {
 // DELETE /api/questionnaire/:id - Soft delete a questionnaire response
 router.delete('/:id', async (req, res) => {
   try {
-    const response = await Response.findById(req.params.id);
+    const response = await Response.findOne({ _id: req.params.id, userId: req.userId });
     if (!response) {
       return res.status(404).json({
         success: false,

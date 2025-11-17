@@ -9,8 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AssessmentResult } from '../models/result';
 import { formatDate, formatTime } from '../utils/dateUtils';
-import { calculateRiskFactors } from '../utils/riskCalculation';
-import { QUESTION_LABELS } from '../utils/constants';
+import { QUESTION_LABELS, QUESTIONS } from '../utils/constants';
 
 interface DetailedResultScreenProps {
   result: AssessmentResult;
@@ -18,16 +17,12 @@ interface DetailedResultScreenProps {
 }
 
 const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onBack }) => {
-  const { appetite, mood, lackOfSupport, history } = calculateRiskFactors(result.questionnaireResponses);
-  
-  const factors: string[] = [];
-  if (appetite) factors.push('Appetite');
-  if (mood) factors.push('Mood');
-  if (lackOfSupport) factors.push('Lack of Support');
-  if (history) factors.push('History');
-  
-  const score = factors.length;
+  const score = result.score ?? 0;
+  const maxScore = result.maxScore || QUESTIONS.length;
   const isRisk = result.riskResult === 'Possible PPD Risk';
+  const scorePercentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+  const riskFactorLabels =
+    result.riskFactors?.map((questionId) => QUESTION_LABELS[questionId] || questionId) || [];
 
   return (
     <View style={styles.container}>
@@ -64,23 +59,23 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
             <Text style={styles.scoreLabel}>Risk Score</Text>
             <View style={styles.scoreRow}>
               <Text style={[styles.scoreValue, isRisk ? styles.scoreValueRisk : styles.scoreValueLow]}>
-                {score}/4
+                {score}/{maxScore}
               </Text>
               <View style={styles.scoreBarContainer}>
                 <View 
                   style={[
                     styles.scoreBar, 
                     { 
-                      width: `${(score / 4) * 100}%`,
+                      width: `${scorePercentage}%`,
                       backgroundColor: isRisk ? '#e74c3c' : '#27ae60',
                     }
                   ]} 
                 />
               </View>
             </View>
-            {factors.length > 0 && (
+            {riskFactorLabels.length > 0 && (
               <Text style={styles.factorsText}>
-                Risk factors: {factors.join(', ')}
+                Risk factors: {riskFactorLabels.join(', ')}
               </Text>
             )}
           </View>
@@ -120,81 +115,91 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
         {/* Questionnaire Responses */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Questionnaire Responses</Text>
-          {Object.entries(result.questionnaireResponses).map(([questionId, answer]) => (
-            <View key={questionId} style={styles.questionCard}>
-              <View style={styles.questionContent}>
-                <Ionicons 
-                  name={answer ? "checkmark-circle" : "close-circle"} 
-                  size={20} 
-                  color={answer ? "#27ae60" : "#e74c3c"} 
-                />
-                <Text style={styles.questionText}>{QUESTION_LABELS[questionId] || questionId}</Text>
+          {QUESTIONS.map((question) => {
+            const answer = result.questionnaireResponses[question.id];
+            const hasAnswer = typeof answer === 'boolean';
+            const isYes = answer === true;
+            return (
+              <View key={question.id} style={styles.questionCard}>
+                <View style={styles.questionContent}>
+                  <Ionicons 
+                    name={
+                      hasAnswer
+                        ? isYes
+                          ? 'checkmark-circle'
+                          : 'close-circle'
+                        : 'ellipse-outline'
+                    } 
+                    size={20} 
+                    color={
+                      hasAnswer
+                        ? isYes
+                          ? '#27ae60'
+                          : '#e74c3c'
+                        : '#bdc3c7'
+                    } 
+                  />
+                  <Text style={styles.questionText}>{QUESTION_LABELS[question.id] || question.text}</Text>
+                </View>
+                <View style={[
+                  styles.answerBadge, 
+                  !hasAnswer
+                    ? styles.answerBadgeNeutral
+                    : isYes
+                      ? styles.answerBadgeYes
+                      : styles.answerBadgeNo
+                ]}>
+                  <Text style={[
+                    styles.answerText, 
+                    !hasAnswer
+                      ? styles.answerTextNeutral
+                      : isYes
+                        ? styles.answerTextYes
+                        : styles.answerTextNo
+                  ]}>
+                    {!hasAnswer ? 'N/A' : isYes ? 'Yes' : 'No'}
+                  </Text>
+                </View>
               </View>
-              <View style={[styles.answerBadge, answer ? styles.answerBadgeYes : styles.answerBadgeNo]}>
-                <Text style={[styles.answerText, answer ? styles.answerTextYes : styles.answerTextNo]}>
-                  {answer ? 'Yes' : 'No'}
-                </Text>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Risk Factor Breakdown */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Risk Factor Breakdown</Text>
           <View style={styles.factorCard}>
-            <View style={styles.factorItem}>
-              <Ionicons 
-                name={factors.includes('Appetite') ? "checkmark-circle" : "ellipse-outline"} 
-                size={20} 
-                color={factors.includes('Appetite') ? "#e74c3c" : "#bdc3c7"} 
-              />
-              <Text style={[
-                styles.factorText,
-                factors.includes('Appetite') && styles.factorTextActive
-              ]}>
-                Appetite Changes
-              </Text>
-            </View>
-            <View style={styles.factorItem}>
-              <Ionicons 
-                name={factors.includes('Mood') ? "checkmark-circle" : "ellipse-outline"} 
-                size={20} 
-                color={factors.includes('Mood') ? "#e74c3c" : "#bdc3c7"} 
-              />
-              <Text style={[
-                styles.factorText,
-                factors.includes('Mood') && styles.factorTextActive
-              ]}>
-                Mood Symptoms
-              </Text>
-            </View>
-            <View style={styles.factorItem}>
-              <Ionicons 
-                name={factors.includes('Lack of Support') ? "checkmark-circle" : "ellipse-outline"} 
-                size={20} 
-                color={factors.includes('Lack of Support') ? "#e74c3c" : "#bdc3c7"} 
-              />
-              <Text style={[
-                styles.factorText,
-                factors.includes('Lack of Support') && styles.factorTextActive
-              ]}>
-                Lack of Support
-              </Text>
-            </View>
-            <View style={[styles.factorItem, styles.factorItemLast]}>
-              <Ionicons 
-                name={factors.includes('History') ? "checkmark-circle" : "ellipse-outline"} 
-                size={20} 
-                color={factors.includes('History') ? "#e74c3c" : "#bdc3c7"} 
-              />
-              <Text style={[
-                styles.factorText,
-                factors.includes('History') && styles.factorTextActive
-              ]}>
-                History of Harmful Thoughts
-              </Text>
-            </View>
+            {riskFactorLabels.length > 0 ? (
+              riskFactorLabels.map((label, index) => (
+                <View
+                  key={label}
+                  style={[
+                    styles.factorItem,
+                    index === riskFactorLabels.length - 1 && styles.factorItemLast,
+                  ]}
+                >
+                  <Ionicons 
+                    name="checkmark-circle" 
+                    size={20} 
+                    color="#e74c3c" 
+                  />
+                  <Text style={[styles.factorText, styles.factorTextActive]}>
+                    {label}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <View style={[styles.factorItem, styles.factorItemLast]}>
+                <Ionicons 
+                  name="shield-checkmark" 
+                  size={20} 
+                  color="#27ae60" 
+                />
+                <Text style={[styles.factorText, styles.factorTextLow]}>
+                  No high-risk indicators were triggered in this assessment.
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -389,6 +394,11 @@ const styles = StyleSheet.create({
   answerBadgeNo: {
     backgroundColor: '#fff5f5',
   },
+  answerBadgeNeutral: {
+    backgroundColor: '#f6f6f6',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
   answerText: {
     fontSize: 13,
     fontWeight: '700',
@@ -398,6 +408,9 @@ const styles = StyleSheet.create({
   },
   answerTextNo: {
     color: '#e74c3c',
+  },
+  answerTextNeutral: {
+    color: '#636e72',
   },
   factorCard: {
     backgroundColor: '#fff',
@@ -424,6 +437,10 @@ const styles = StyleSheet.create({
   },
   factorTextActive: {
     color: '#2d3436',
+    fontWeight: '700',
+  },
+  factorTextLow: {
+    color: '#27ae60',
     fontWeight: '700',
   },
   footerSpacer: {

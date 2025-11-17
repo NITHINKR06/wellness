@@ -1,5 +1,12 @@
 import { Platform } from 'react-native';
-import { AssessmentResult, QuestionnaireResponse } from '../models/result';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import {
+  AssessmentResult,
+  QuestionnaireSubmission,
+  QuestionnaireResponse,
+  AuthResponse,
+} from '../models/result';
 
 /**
  * API Configuration
@@ -35,50 +42,125 @@ const getApiBaseUrl = () => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
+const OFFLINE_QUEUE_KEY = '@wellness/offlineQueue';
+export const OFFLINE_ERROR_CODE = 'OFFLINE_SUBMISSION_QUEUED';
 
-/**
- * Map frontend questionnaire responses to backend format
- * Frontend has 9 questions (q1-q9), backend expects 4 specific fields
- */
-const mapToBackendFormat = (questionnaireResponses: QuestionnaireResponse) => {
-  // Map questions to backend fields:
-  // q4 -> appetite (changes in appetite)
-  // q1, q2, q3, q5, q6, q7 -> mood (any mood-related question, including sleep issues)
-  // q8 -> history (thoughts of harming)
-  // q9 -> support (inverted: true = adequate support, false = lack of support)
-  // Note: Server counts lack of support (!support) as a risk factor
-  
-  const appetite = questionnaireResponses['q4'] === true; // Changes in appetite (only true if explicitly answered)
-  const mood = !!(
-    questionnaireResponses['q1'] || // Feeling sad, anxious, or empty
-    questionnaireResponses['q2'] || // Lost interest
-    questionnaireResponses['q3'] || // Sleeping too much or too little (now included)
-    questionnaireResponses['q5'] || // Feeling irritable or angry
-    questionnaireResponses['q6'] || // Difficulty concentrating
-    questionnaireResponses['q7']    // Feeling guilty or worthless
-  );
-  // Support: only count as false (lack of support) if explicitly answered as false
-  // If not answered (undefined), treat as null/undefined so it doesn't count as a risk factor
-  // q9 mapping: true (Yes) = has adequate support, false (No) = lacks support, undefined = not answered
-  const support = questionnaireResponses.hasOwnProperty('q9') 
-    ? questionnaireResponses['q9']  // If q9 exists, use its value directly (true = adequate support, false = lack of support)
-    : null; // Not answered: don't count as risk factor
-  const history = questionnaireResponses['q8'] === true; // Thoughts of harming (only true if explicitly answered)
+type OfflineSubmission = {
+  submission: QuestionnaireSubmission;
+  queuedAt: string;
+};
 
-  return { appetite, mood, support, history };
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+};
+
+const isNetworkError = (error: any) =>
+  error?.message === 'Request timeout' ||
+  error?.message?.includes('NetworkError') ||
+  error?.message?.includes('fetch failed') ||
+  error?.message?.includes('Network request failed') ||
+  error?.name === 'TypeError';
+
+type HeaderMap = Record<string, string>;
+type FetchRequestOptions = {
+  method?: string;
+  headers?: HeaderMap;
+  body?: string;
+};
+
+const buildHeaders = (authRequired: boolean, extraHeaders?: HeaderMap): HeaderMap => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(extraHeaders || {}),
+  };
+
+  if (authRequired) {
+    if (!authToken) {
+      throw new Error('You are no longer authenticated. Please sign in again.');
+    }
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
+  return headers;
 };
 
 /**
  * Fetch with timeout helper
  */
-const fetchWithTimeout = (url: string, options: RequestInit, timeout = 5000): Promise<Response> => {
+const fetchWithTimeout = (
+  url: string,
+  options: FetchRequestOptions,
+  timeout = 5000,
+  authRequired = true
+): Promise<Response> => {
+  const headers = buildHeaders(authRequired, options.headers);
   return Promise.race([
-    fetch(url, options),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), timeout)
-    ),
+    fetch(url, { ...options, headers }),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), timeout)),
   ]);
 };
+
+const handleJsonResponse = async (response: Response, defaultError: string) => {
+  if (response.ok) {
+    return response.json();
+  }
+
+  let errorMessage = defaultError;
+  try {
+    const errorData = await response.json();
+    if (errorData.message) {
+      errorMessage = errorData.message;
+    } else if (errorData.error) {
+      errorMessage = errorData.error;
+    } else if (errorData.errors && Array.isArray(errorData.errors)) {
+      errorMessage = errorData.errors.map((e: any) => e.msg || e.message).join(', ');
+    }
+  } catch (error) {
+    // Ignore JSON parse errors and use default error message
+  }
+
+  throw new Error(errorMessage);
+};
+
+const readOfflineQueue = async (): Promise<OfflineSubmission[]> => {
+  const raw = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as OfflineSubmission[];
+  } catch (error) {
+    console.error('Failed to parse offline queue payload. Clearing queue.', error);
+    await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+    return [];
+  }
+};
+
+const persistOfflineQueue = async (queue: OfflineSubmission[]) => {
+  if (!queue.length) {
+    await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+    return;
+  }
+  await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+};
+
+const enqueueOfflineSubmission = async (submission: QuestionnaireSubmission) => {
+  const queue = await readOfflineQueue();
+  queue.push({
+    submission,
+    queuedAt: new Date().toISOString(),
+  });
+  await persistOfflineQueue(queue);
+};
+
+export const getQueuedSubmissionCount = async () => {
+  const queue = await readOfflineQueue();
+  return queue.length;
+};
+
+/**
+ * Map backend response to frontend format
+ */
 
 /**
  * Map backend response to frontend format
@@ -121,82 +203,105 @@ const mapFromBackendFormat = (backendResponse: any): AssessmentResult => {
     sleepHours: backendResponse.sleepHours,
     questionnaireResponses,
     riskResult: backendResponse.resultLabel as 'Possible PPD Risk' | 'Low Risk',
-    timestamp: new Date(backendResponse.createdAt),
+    score: backendResponse.score ?? 0,
+    maxScore: backendResponse.maxScore ?? 0,
+    riskFactors: backendResponse.riskFactors ?? [],
+    riskThreshold: backendResponse.riskThreshold,
+    modelVersion: backendResponse.modelVersion,
+    riskBreakdown: backendResponse.riskBreakdown
+      ? { ...backendResponse.riskBreakdown }
+      : undefined,
+    timestamp: backendResponse.createdAt ? new Date(backendResponse.createdAt) : new Date(),
   };
+};
+
+const sendQuestionnaire = async (
+  submission: QuestionnaireSubmission
+): Promise<AssessmentResult> => {
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/questionnaire`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        stage: submission.stage,
+        region: submission.region,
+        sleepHours: submission.sleepHours,
+        questionnaireResponses: submission.questionnaireResponses,
+      }),
+    },
+    10000,
+    true
+  );
+
+  const data = await handleJsonResponse(response, 'Failed to submit questionnaire to MongoDB');
+  if (!data.success || !data.data) {
+    throw new Error('Invalid response from server');
+  }
+  return mapFromBackendFormat(data.data);
 };
 
 /**
  * Submit questionnaire response to backend
  */
 export const submitQuestionnaire = async (
-  assessmentResult: AssessmentResult
+  submission: QuestionnaireSubmission,
+  options: { skipQueue?: boolean } = {}
 ): Promise<AssessmentResult> => {
+  const { skipQueue = false } = options;
+  const networkState = await NetInfo.fetch();
+  const isOffline = !networkState.isConnected || networkState.isInternetReachable === false;
+
+  if (isOffline && !skipQueue) {
+    await enqueueOfflineSubmission(submission);
+    const offlineError = new Error(OFFLINE_ERROR_CODE);
+    offlineError.name = 'OfflineError';
+    throw offlineError;
+  }
+
   try {
-    const { appetite, mood, support, history } = mapToBackendFormat(
-      assessmentResult.questionnaireResponses
-    );
-
-    const requestBody = {
-      stage: assessmentResult.stage,
-      region: assessmentResult.region,
-      sleepHours: assessmentResult.sleepHours,
-      appetite,
-      mood,
-      support, // This should be null if q9 is not answered, true if q9 is true, false if q9 is false
-      history,
-      // Send individual question responses for accurate storage and reconstruction
-      questionnaireResponses: assessmentResult.questionnaireResponses,
-    };
-
-    const response = await fetchWithTimeout(`${API_BASE_URL}/questionnaire`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    }, 10000); // 10 second timeout for POST
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to submit questionnaire to MongoDB';
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (errorData.error) {
-          errorMessage = errorData.error;
-        } else if (errorData.errors && Array.isArray(errorData.errors)) {
-          errorMessage = errorData.errors.map((e: any) => e.msg || e.message).join(', ');
-        }
-      } catch (parseError) {
-        // If we can't parse the error, use default message
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    if (!data.success || !data.data) {
-      throw new Error('Invalid response from server');
-    }
-    return mapFromBackendFormat(data.data);
+    return await sendQuestionnaire(submission);
   } catch (error: any) {
-    // Check if it's a network error (backend not available)
-    const isNetworkError = 
-      error.message === 'Request timeout' ||
-      error.message?.includes('NetworkError') ||
-      error.message?.includes('fetch failed') ||
-      error.message?.includes('Network request failed') ||
-      error?.name === 'TypeError' ||
-      error?.toString()?.includes('Network request failed');
-    
-    // Provide user-friendly error messages
-    if (isNetworkError) {
-      throw new Error('Cannot connect to server. Please ensure the backend is running and check your internet connection.');
+    if (!skipQueue && isNetworkError(error)) {
+      await enqueueOfflineSubmission(submission);
+      const offlineError = new Error(OFFLINE_ERROR_CODE);
+      offlineError.name = 'OfflineError';
+      throw offlineError;
     }
-    
-    // Log other errors (unexpected errors) - network errors are handled above
+
     console.error('Error submitting questionnaire:', error);
     throw error;
   }
+};
+
+export const flushOfflineQueue = async (): Promise<{ synced: number; remaining: number }> => {
+  const queue = await readOfflineQueue();
+  if (!queue.length) {
+    return { synced: 0, remaining: 0 };
+  }
+
+  const remaining: OfflineSubmission[] = [];
+  let synced = 0;
+
+  for (const entry of queue) {
+    try {
+      await sendQuestionnaire(entry.submission);
+      synced += 1;
+    } catch (error) {
+      if (isNetworkError(error)) {
+        remaining.push(entry, ...queue.slice(queue.indexOf(entry) + 1));
+        break;
+      }
+      console.error('Failed to replay offline submission:', error);
+    }
+  }
+
+  if (synced === queue.length) {
+    await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+    return { synced, remaining: 0 };
+  }
+
+  await persistOfflineQueue(remaining);
+  return { synced, remaining: remaining.length };
 };
 
 /**
@@ -204,52 +309,22 @@ export const submitQuestionnaire = async (
  */
 export const fetchAllResponses = async (): Promise<AssessmentResult[]> => {
   try {
-    const response = await fetchWithTimeout(`${API_BASE_URL}/questionnaire`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }, 5000); // 5 second timeout
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/questionnaire`,
+      { method: 'GET' },
+      5000,
+      true
+    );
 
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch responses from MongoDB';
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (errorData.error) {
-          errorMessage = errorData.error;
-        }
-      } catch (parseError) {
-        // If we can't parse the error, use default message
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await handleJsonResponse(response, 'Failed to fetch responses from MongoDB');
     if (!data.success || !data.data) {
-      // Return empty array if invalid response (graceful degradation)
       return [];
     }
     return data.data.map(mapFromBackendFormat);
   } catch (error: any) {
-    // Check if it's a network error (backend not available)
-    const isNetworkError = 
-      error.message === 'Request timeout' ||
-      error.message?.includes('NetworkError') ||
-      error.message?.includes('fetch failed') ||
-      error.message?.includes('Network request failed') ||
-      error?.name === 'TypeError' ||
-      error?.toString()?.includes('Network request failed');
-    
-    if (isNetworkError) {
-      // Silently return empty array on network error (backend not available)
-      // This is expected behavior when backend server is not running
-      // No logging needed - this is normal when backend is offline
+    if (isNetworkError(error)) {
       return [];
     }
-    
-    // Log other errors (unexpected errors)
     console.error('Error fetching responses:', error);
     throw error;
   }
@@ -260,36 +335,18 @@ export const fetchAllResponses = async (): Promise<AssessmentResult[]> => {
  */
 export const deleteResponse = async (id: string): Promise<void> => {
   try {
-    const response = await fetchWithTimeout(`${API_BASE_URL}/questionnaire/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/questionnaire/${id}`,
+      {
+        method: 'DELETE',
       },
-    }, 5000); // 5 second timeout
+      5000,
+      true
+    );
 
-    if (!response.ok) {
-      let errorMessage = 'Failed to delete response from MongoDB';
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (errorData.error) {
-          errorMessage = errorData.error;
-        }
-      } catch (parseError) {
-        // If we can't parse the error, use default message
-      }
-      throw new Error(errorMessage);
-    }
+    await handleJsonResponse(response, 'Failed to delete response from MongoDB');
   } catch (error: any) {
     console.error('Error deleting response:', error);
-    // Provide user-friendly error messages
-    if (error.message === 'Request timeout') {
-      throw new Error('Request timed out. Please try again.');
-    }
-    if (error.message.includes('NetworkError') || error.message.includes('fetch failed')) {
-      throw new Error('Cannot connect to server. Please check your internet connection.');
-    }
     throw error;
   }
 };
@@ -299,7 +356,12 @@ export const deleteResponse = async (id: string): Promise<void> => {
  */
 export const checkBackendHealth = async (): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/health`);
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/health`,
+      { method: 'GET' },
+      4000,
+      false
+    );
     const data = await response.json();
     return data.ok === true;
   } catch (error) {
@@ -307,4 +369,33 @@ export const checkBackendHealth = async (): Promise<boolean> => {
     return false;
   }
 };
+
+const handleAuthRequest = async (endpoint: 'login' | 'register', email: string, password: string) => {
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/auth/${endpoint}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    },
+    5000,
+    false
+  );
+
+  const data = await handleJsonResponse(
+    response,
+    endpoint === 'login' ? 'Failed to sign in' : 'Failed to register'
+  );
+
+  if (!data.success || !data.data?.token || !data.data?.user) {
+    throw new Error('Invalid response from authentication server');
+  }
+
+  return data.data as AuthResponse;
+};
+
+export const signInUser = (email: string, password: string) =>
+  handleAuthRequest('login', email, password);
+
+export const registerUser = (email: string, password: string) =>
+  handleAuthRequest('register', email, password);
 

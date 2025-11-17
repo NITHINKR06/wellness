@@ -12,15 +12,27 @@ interface HomeScreenProps {
   onNavigateToQuestionnaire: () => void;
   onNavigateToResults: () => void;
   onNavigateToResources?: () => void;
+  onNavigateToProfile?: () => void;
   resultsCount?: number;
+  userEmail?: string;
+  isAuthenticated?: boolean;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ 
-  onNavigateToQuestionnaire, 
+const HomeScreen: React.FC<HomeScreenProps> = ({
+  onNavigateToQuestionnaire,
   onNavigateToResults,
   onNavigateToResources,
-  resultsCount = 0 
+  onNavigateToProfile,
+  resultsCount = 0,
+  userEmail,
+  isAuthenticated = false,
 }) => {
+  const profileCtaLabel = isAuthenticated ? 'Open Profile' : 'Log In';
+  const profileTitle = isAuthenticated ? 'Keep your progress safe' : 'Ready to save your progress?';
+  const profileSubtitle = isAuthenticated
+    ? `You have ${resultsCount} saved assessment${resultsCount === 1 ? '' : 's'}.`
+    : 'Create an account to sync your assessments across devices.';
+
   return (
     <View style={styles.container}>
       <ScrollView 
@@ -92,6 +104,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             Are you feeling overwhelmed by anxiety and stress? Our app will help you find calm and balance in your day to day life.
           </Text>
         </View>
+
+        {/* Profile Prompt */}
+        {/* <View style={styles.profileCard}>
+          <View style={styles.profileCardText}>
+            <Text style={styles.profileCardTitle}>{profileTitle}</Text>
+            <Text style={styles.profileCardSubtitle}>{profileSubtitle}</Text>
+            {userEmail && isAuthenticated && (
+              <Text style={styles.profileCardEmail}>{userEmail}</Text>
+            )}
+          </View>
+          <TouchableOpacity
+            style={styles.profileCardButton}
+            onPress={() => onNavigateToProfile?.()}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.profileCardButtonText}>{profileCtaLabel}</Text>
+            <Ionicons name="person-circle-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View> */}
 
         {/* Bottom Leaves */}
         <View style={styles.bottomLeaves}>
@@ -318,6 +349,52 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: 10,
+  },
+  profileCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  profileCardText: {
+    marginBottom: 16,
+  },
+  profileCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#2d3436',
+    marginBottom: 6,
+  },
+  profileCardSubtitle: {
+    fontSize: 14,
+    color: '#636e72',
+    lineHeight: 20,
+  },
+  profileCardEmail: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#6c5ce7',
+    fontWeight: '600',
+  },
+  profileCardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#6c5ce7',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+  profileCardButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   bottomLeaves: {
     width: '100%',

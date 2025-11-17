@@ -11,12 +11,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stage, Region, QuestionnaireResponse, AssessmentResult } from '../models/result';
+import { Stage, Region, QuestionnaireResponse, QuestionnaireSubmission } from '../models/result';
 import { STAGES, REGIONS, QUESTIONS } from '../utils/constants';
-import { calculateRiskResult, calculateRiskScore } from '../utils/riskCalculation';
+import { OFFLINE_ERROR_CODE } from '../utils/api';
 
 interface QuestionnaireScreenProps {
-  onSubmit: (result: AssessmentResult) => void | Promise<void>;
+  onSubmit: (submission: QuestionnaireSubmission) => void | Promise<void>;
   isSubmitting?: boolean;
 }
 
@@ -27,9 +27,6 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
   const [questionnaireResponses, setQuestionnaireResponses] = useState<QuestionnaireResponse>({});
   const [showStageModal, setShowStageModal] = useState(false);
   const [showRegionModal, setShowRegionModal] = useState(false);
-
-  const currentRisk = calculateRiskResult(questionnaireResponses);
-  const riskScore = calculateRiskScore(questionnaireResponses);
 
   const handleQuestionChange = (questionId: string, value: boolean) => {
     setQuestionnaireResponses((prev) => ({
@@ -93,26 +90,39 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
       return;
     }
 
-    const riskResult = calculateRiskResult(questionnaireResponses);
+    const unanswered = QUESTIONS.filter(
+      (question) => !questionnaireResponses.hasOwnProperty(question.id)
+    );
 
-    const assessmentResult: AssessmentResult = {
-      id: Date.now().toString(),
+    if (unanswered.length > 0) {
+      Alert.alert(
+        'Incomplete Assessment',
+        'Please answer every question before submitting.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const submission: QuestionnaireSubmission = {
       stage: stage as Stage,
       region: region as Region,
       sleepHours: sleepHoursNum,
       questionnaireResponses: { ...questionnaireResponses },
-      riskResult,
-      timestamp: new Date(),
     };
 
     try {
-      await onSubmit(assessmentResult);
+      await onSubmit(submission);
       setStage('');
       setRegion('');
       setSleepHours('');
       setQuestionnaireResponses({});
-    } catch (error) {
-      // Error handling done in App.tsx
+    } catch (error: any) {
+      if (error?.message === OFFLINE_ERROR_CODE || error?.name === 'OfflineError') {
+        setStage('');
+        setRegion('');
+        setSleepHours('');
+        setQuestionnaireResponses({});
+      }
     }
   };
 

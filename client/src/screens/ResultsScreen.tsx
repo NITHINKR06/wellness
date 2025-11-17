@@ -11,6 +11,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AssessmentResult } from '../models/result';
 import { deleteResponse } from '../utils/api';
+import { formatDate, formatTime } from '../utils/dateUtils';
+import { calculateRiskScore } from '../utils/riskCalculation';
 
 interface ResultsScreenProps {
   resultsHistory: AssessmentResult[];
@@ -57,22 +59,6 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
     );
   };
 
-  const formatDate = (date: Date) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const formatTime = (date: Date) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const calculateStats = () => {
     const total = resultsHistory.length;
@@ -83,24 +69,13 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ resultsHistory, onBack, o
 
   const stats = calculateStats();
 
-  const calculateRiskScore = (item: AssessmentResult) => {
-    const appetite = item.questionnaireResponses['q4'] === true;
-    const mood = !!(
-      item.questionnaireResponses['q1'] ||
-      item.questionnaireResponses['q2'] ||
-      item.questionnaireResponses['q3'] ||
-      item.questionnaireResponses['q5'] ||
-      item.questionnaireResponses['q6'] ||
-      item.questionnaireResponses['q7']
-    );
-    const lackOfSupport = item.questionnaireResponses.hasOwnProperty('q9') && item.questionnaireResponses['q9'] === false;
-    const history = item.questionnaireResponses['q8'] === true;
-    return [appetite, mood, lackOfSupport, history].filter(Boolean).length;
+  const getRiskScore = (item: AssessmentResult) => {
+    return calculateRiskScore(item.questionnaireResponses);
   };
 
   const renderResultItem = ({ item, index }: { item: AssessmentResult; index: number }) => {
     const isRisk = item.riskResult === 'Possible PPD Risk';
-    const riskScore = calculateRiskScore(item);
+    const riskScore = getRiskScore(item);
     const maxScore = 4;
     
     return (

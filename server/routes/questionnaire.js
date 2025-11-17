@@ -30,9 +30,6 @@ router.post(
 
       const { stage, region, sleepHours, appetite, mood, support, history, questionnaireResponses } = req.body;
 
-      // Debug: Log received data
-      console.log('[Backend] Received data:', { stage, region, sleepHours, appetite, mood, support, history, questionnaireResponses });
-
       // Calculate score (count of positive risk factors)
       // Note: support field handling:
       // - true = adequate support (NOT a risk factor)
@@ -41,16 +38,6 @@ router.post(
       // So we count !support (lack of support) as a positive risk factor, but only if support is explicitly false
       const supportRiskFactor = support === false ? true : false; // Only count if explicitly false (lack of support)
       const positiveCount = [appetite, mood, supportRiskFactor, history].filter(Boolean).length;
-      
-      // Debug: Log calculation
-      console.log('[Backend] Risk calculation:', {
-        appetite,
-        mood,
-        support,
-        supportRiskFactor,
-        history,
-        positiveCount
-      });
       
       // Determine result label based on score
       // If 2 or more positive risk factors, it's "Possible PPD Risk"
@@ -79,8 +66,6 @@ router.post(
       // Save to MongoDB - this is the single source of truth for all data
       // All questionnaire responses are permanently stored in MongoDB
       const savedResponse = await response.save();
-
-      console.log(savedResponse,'savedResponse');
 
       res.status(201).json({
         success: true,

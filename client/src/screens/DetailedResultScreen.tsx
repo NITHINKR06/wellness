@@ -8,6 +8,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AssessmentResult } from '../models/result';
+import { formatDate, formatTime } from '../utils/dateUtils';
+import { calculateRiskFactors } from '../utils/riskCalculation';
+import { QUESTION_LABELS } from '../utils/constants';
 
 interface DetailedResultScreenProps {
   result: AssessmentResult;
@@ -15,62 +18,16 @@ interface DetailedResultScreenProps {
 }
 
 const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onBack }) => {
-  // Calculate the 4 factors and score
-  const calculateFactors = () => {
-    const appetite = result.questionnaireResponses['q4'] === true;
-    const mood = !!(
-      result.questionnaireResponses['q1'] ||
-      result.questionnaireResponses['q2'] ||
-      result.questionnaireResponses['q3'] ||
-      result.questionnaireResponses['q5'] ||
-      result.questionnaireResponses['q6'] ||
-      result.questionnaireResponses['q7']
-    );
-    const lackOfSupport = result.questionnaireResponses.hasOwnProperty('q9') && result.questionnaireResponses['q9'] === false;
-    const history = result.questionnaireResponses['q8'] === true;
-    
-    const factors = [];
-    if (appetite) factors.push('Appetite');
-    if (mood) factors.push('Mood');
-    if (lackOfSupport) factors.push('Lack of Support');
-    if (history) factors.push('History');
-    
-    const score = factors.length;
-    return { factors, score };
-  };
-
-  const { factors, score } = calculateFactors();
+  const { appetite, mood, lackOfSupport, history } = calculateRiskFactors(result.questionnaireResponses);
+  
+  const factors: string[] = [];
+  if (appetite) factors.push('Appetite');
+  if (mood) factors.push('Mood');
+  if (lackOfSupport) factors.push('Lack of Support');
+  if (history) factors.push('History');
+  
+  const score = factors.length;
   const isRisk = result.riskResult === 'Possible PPD Risk';
-
-  // Question labels
-  const questionLabels: { [key: string]: string } = {
-    q1: 'I have been feeling sad, anxious, or empty',
-    q2: 'I have lost interest in activities I used to enjoy',
-    q3: 'I have been sleeping too much or too little',
-    q4: 'I have had changes in my appetite',
-    q5: 'I have been feeling irritable or angry',
-    q6: 'I have had difficulty concentrating or making decisions',
-    q7: 'I have been feeling guilty or worthless',
-    q8: 'I have had thoughts of harming myself or my baby',
-    q9: 'Do you feel you have adequate support from your family/partner?',
-  };
-
-  const formatDate = (date: Date) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const formatTime = (date: Date) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   return (
     <View style={styles.container}>
@@ -171,7 +128,7 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
                   size={20} 
                   color={answer ? "#27ae60" : "#e74c3c"} 
                 />
-                <Text style={styles.questionText}>{questionLabels[questionId] || questionId}</Text>
+                <Text style={styles.questionText}>{QUESTION_LABELS[questionId] || questionId}</Text>
               </View>
               <View style={[styles.answerBadge, answer ? styles.answerBadgeYes : styles.answerBadgeNo]}>
                 <Text style={[styles.answerText, answer ? styles.answerTextYes : styles.answerTextNo]}>

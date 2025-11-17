@@ -11,22 +11,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stage, Region, RiskResult, QuestionnaireResponse, AssessmentResult } from '../models/result';
-
-const STAGES: Stage[] = ['First Trimester', 'Second Trimester', 'Third Trimester', 'Postpartum'];
-const REGIONS: Region[] = ['North', 'South', 'East', 'West', 'Central'];
-
-const QUESTIONS = [
-  { id: 'q1', text: 'I have been feeling sad, anxious, or empty' },
-  { id: 'q2', text: 'I have lost interest in activities I used to enjoy' },
-  { id: 'q3', text: 'I have been sleeping too much or too little' },
-  { id: 'q4', text: 'I have had changes in my appetite' },
-  { id: 'q5', text: 'I have been feeling irritable or angry' },
-  { id: 'q6', text: 'I have had difficulty concentrating or making decisions' },
-  { id: 'q7', text: 'I have been feeling guilty or worthless' },
-  { id: 'q8', text: 'I have had thoughts of harming myself or my baby' },
-  { id: 'q9', text: 'Do you feel you have adequate support from your family/partner?' },
-];
+import { Stage, Region, QuestionnaireResponse, AssessmentResult } from '../models/result';
+import { STAGES, REGIONS, QUESTIONS } from '../utils/constants';
+import { calculateRiskResult, calculateRiskScore } from '../utils/riskCalculation';
 
 interface QuestionnaireScreenProps {
   onSubmit: (result: AssessmentResult) => void | Promise<void>;
@@ -41,35 +28,8 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
   const [showStageModal, setShowStageModal] = useState(false);
   const [showRegionModal, setShowRegionModal] = useState(false);
 
-  const _calculateRisk = (responses: QuestionnaireResponse): RiskResult => {
-    const appetite = responses['q4'] === true;
-    const mood = !!(
-      responses['q1'] ||
-      responses['q2'] ||
-      responses['q3'] ||
-      responses['q5'] ||
-      responses['q6'] ||
-      responses['q7']
-    );
-    const lackOfSupport = responses.hasOwnProperty('q9') && responses['q9'] === false;
-    const history = responses['q8'] === true;
-    const positiveCount = [appetite, mood, lackOfSupport, history].filter(Boolean).length;
-    
-    if (positiveCount >= 2) {
-      return 'Possible PPD Risk';
-    }
-    return 'Low Risk';
-  };
-
-  const currentRisk = _calculateRisk(questionnaireResponses);
-  const riskScore = (() => {
-    const appetite = questionnaireResponses['q4'] === true;
-    const mood = !!(questionnaireResponses['q1'] || questionnaireResponses['q2'] || questionnaireResponses['q3'] || 
-                    questionnaireResponses['q5'] || questionnaireResponses['q6'] || questionnaireResponses['q7']);
-    const lackOfSupport = questionnaireResponses.hasOwnProperty('q9') && questionnaireResponses['q9'] === false;
-    const history = questionnaireResponses['q8'] === true;
-    return [appetite, mood, lackOfSupport, history].filter(Boolean).length;
-  })();
+  const currentRisk = calculateRiskResult(questionnaireResponses);
+  const riskScore = calculateRiskScore(questionnaireResponses);
 
   const handleQuestionChange = (questionId: string, value: boolean) => {
     setQuestionnaireResponses((prev) => ({
@@ -133,7 +93,7 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
       return;
     }
 
-    const riskResult = _calculateRisk(questionnaireResponses);
+    const riskResult = calculateRiskResult(questionnaireResponses);
 
     const assessmentResult: AssessmentResult = {
       id: Date.now().toString(),

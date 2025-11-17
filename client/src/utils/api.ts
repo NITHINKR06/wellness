@@ -1,20 +1,20 @@
-import { AssessmentResult, QuestionnaireResponse } from '../models/result';
 import { Platform } from 'react-native';
+import { AssessmentResult, QuestionnaireResponse } from '../models/result';
 
-// Backend API base URL - adjust this based on your environment
-// 
-// CONFIGURATION:
-// - Android Emulator: Use 'http://10.0.2.2:4000/api'
-// - Android Physical Device: Use your computer's IP (e.g., 'http://192.168.1.100:4000/api')
-// - iOS Simulator: Use 'http://localhost:4000/api'
-// - iOS Physical Device: Use your computer's IP
-// 
-// To find your IP: Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux)
-// Look for IPv4 Address under your WiFi/Ethernet adapter (not VirtualBox/VMware)
-
-// Set USE_EMULATOR to true if using Android Emulator, false for physical device
-const USE_EMULATOR = false; // Change to true for Android emulator
-const LOCAL_IP_ADDRESS = '192.168.0.109'; // Your WiFi IP address (found via ipconfig)
+/**
+ * API Configuration
+ * 
+ * CONFIGURATION:
+ * - Android Emulator: Use 'http://10.0.2.2:4000/api'
+ * - Android Physical Device: Use your computer's IP (e.g., 'http://192.168.1.100:4000/api')
+ * - iOS Simulator: Use 'http://localhost:4000/api'
+ * - iOS Physical Device: Use your computer's IP
+ * 
+ * To find your IP: Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux)
+ * Look for IPv4 Address under your WiFi/Ethernet adapter (not VirtualBox/VMware)
+ */
+const USE_EMULATOR = false;
+const LOCAL_IP_ADDRESS = '192.168.0.109';
 
 const getApiBaseUrl = () => {
   if (__DEV__) {
@@ -135,12 +135,6 @@ export const submitQuestionnaire = async (
     const { appetite, mood, support, history } = mapToBackendFormat(
       assessmentResult.questionnaireResponses
     );
-
-    // Debug: Log the mapping to verify correctness
-    if (__DEV__) {
-      console.log('[API] Frontend responses:', assessmentResult.questionnaireResponses);
-      console.log('[API] Mapped to backend:', { appetite, mood, support, history });
-    }
 
     const requestBody = {
       stage: assessmentResult.stage,

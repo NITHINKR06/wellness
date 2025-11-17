@@ -20,19 +20,15 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedResult, setSelectedResult] = useState<AssessmentResult | null>(null);
 
-  // Load results from backend on app start
   useEffect(() => {
     const loadData = async () => {
       const startTime = Date.now();
-      const minLoadingTime = 1200; // 1.2 seconds minimum for smooth UX
+      const minLoadingTime = 1200;
       
       try {
-        // Fetch existing results from MongoDB (single source of truth)
         const responses = await fetchAllResponses();
         setResultsHistory(responses);
       } catch (error: any) {
-        // fetchAllResponses already handles network errors gracefully
-        // Only log unexpected errors here
         const isNetworkError = 
           error?.message?.includes('Network') ||
           error?.message?.includes('fetch failed') ||
@@ -41,10 +37,7 @@ export default function App() {
         if (!isNetworkError) {
           console.error('Failed to load results from MongoDB:', error);
         }
-        // Continue with empty results if backend is not available
-        // Data is only stored in MongoDB, so we show empty state
       } finally {
-        // Ensure minimum loading time for smooth UX
         const elapsed = Date.now() - startTime;
         const remainingTime = Math.max(0, minLoadingTime - elapsed);
         setTimeout(() => {
@@ -56,21 +49,13 @@ export default function App() {
     loadData();
   }, []);
 
-  // Handle submission from questionnaire
-  // All data must be saved to MongoDB - no local fallback
   const handleSubmit = async (result: AssessmentResult) => {
     setIsSubmitting(true);
     try {
-      // Submit to backend (MongoDB) - this is the only source of truth
       const savedResult = await submitQuestionnaire(result);
-      
-      // Only update local state after successful MongoDB save
       setResultsHistory((prev) => [savedResult, ...prev]);
-      
-      // Automatically navigate to results screen after successful submission
       setCurrentScreen('results');
     } catch (error: any) {
-      // Only log unexpected errors (network errors already have user-friendly messages)
       const isNetworkError = 
         error?.message?.includes('Cannot connect to server') ||
         error?.message?.includes('Network') ||
@@ -97,48 +82,34 @@ export default function App() {
           },
         ]
       );
-      // Do NOT add to local state - data must be in MongoDB first
-      // User stays on questionnaire screen to retry
-      // Rethrow error so form doesn't reset
       throw error;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Navigate to home screen
   const handleNavigateToHome = () => {
     setCurrentScreen('home');
   };
 
-  // Navigate to questionnaire screen
   const handleNavigateToQuestionnaire = () => {
     setCurrentScreen('questionnaire');
   };
 
-  // Navigate to results screen
   const handleNavigateToResults = () => {
     setCurrentScreen('results');
   };
 
-  // Handle deletion of a response
   const handleDelete = async (id: string) => {
     try {
-      // Refresh the list from MongoDB (which will exclude deleted items)
-      // All data is stored in MongoDB only, so we refresh from there
       const responses = await fetchAllResponses();
       setResultsHistory(responses);
     } catch (error: any) {
       console.error('Failed to refresh results after deletion:', error);
-      // On error, optimistically update local state (deletion likely succeeded)
-      // But show a warning that sync may be needed
       setResultsHistory((prev) => prev.filter((r) => r.id !== id));
-      // Note: In a production app, you might want to show a toast here
-      // indicating that deletion may need to be retried
     }
   };
 
-  // Show loading screen
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -147,7 +118,6 @@ export default function App() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       
-      {/* Current Screen */}
       <View style={styles.screenContainer}>
         {currentScreen === 'home' ? (
           <HomeScreen
@@ -180,7 +150,6 @@ export default function App() {
         )}
       </View>
 
-      {/* Bottom Navigation - Only show when not on home screen */}
       {currentScreen !== 'home' && (
         <View style={styles.navFooter}>
           <View style={styles.navContainer}>

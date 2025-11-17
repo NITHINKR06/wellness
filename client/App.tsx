@@ -53,6 +53,7 @@ const simulateLocalAssessment = (submission: QuestionnaireSubmission): Assessmen
     id: `local-${Date.now()}`,
     stage: submission.stage,
     region: submission.region,
+    middleEastCountry: submission.middleEastCountry,
     sleepHours: submission.sleepHours,
     questionnaireResponses: { ...submission.questionnaireResponses },
     riskResult,
@@ -228,6 +229,8 @@ const AppShell = () => {
   };
 
   const onHomeScreen = currentScreen === 'home';
+  const isQuestionnaireScreen = currentScreen === 'questionnaire';
+  const isProfileScreen = currentScreen === 'profile';
   const handleNavigateToHome = () => setCurrentScreen('home');
   const handleNavigateToProfile = () => setCurrentScreen('profile');
   const handleNavigateToQuestionnaire = () => setCurrentScreen('questionnaire');
@@ -303,36 +306,25 @@ const AppShell = () => {
                 size={22}
                 color={onHomeScreen ? '#6c5ce7' : '#636e72'}
               />
-              <Text
-                style={[
-                  styles.navButtonText,
-                  onHomeScreen && styles.navButtonTextActive,
-                ]}
-              >
-                Home
-              </Text>
+              {onHomeScreen && (
+                <Text style={[styles.navButtonText, styles.navButtonTextActive]}>Home</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.navButton,
-                currentScreen === 'questionnaire' && styles.navButtonActive,
-              ]}
+              style={[styles.navButton, isQuestionnaireScreen && styles.navButtonActive]}
               onPress={handleNavigateToQuestionnaire}
               activeOpacity={0.7}
             >
               <Ionicons
                 name="clipboard-outline"
                 size={22}
-                color={currentScreen === 'questionnaire' ? '#6c5ce7' : '#636e72'}
+                color={isQuestionnaireScreen ? '#6c5ce7' : '#636e72'}
               />
-              <Text
-                style={[
-                  styles.navButtonText,
-                  currentScreen === 'questionnaire' && styles.navButtonTextActive,
-                ]}
-              >
-                Questionnaire
-              </Text>
+              {isQuestionnaireScreen && (
+                <Text style={[styles.navButtonText, styles.navButtonTextActive]}>
+                  Questionnaire
+                </Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.navButton, isResultsScreen && styles.navButtonActive]}
@@ -359,34 +351,26 @@ const AppShell = () => {
                     </View>
                   )}
                 </View>
-                <Text
-                  style={[
-                    styles.navButtonText,
-                    isResultsScreen && styles.navButtonTextActive,
-                  ]}
-                >
-                  Results
-                </Text>
+                {isResultsScreen && (
+                  <Text style={[styles.navButtonText, styles.navButtonTextActive]}>
+                    Results
+                  </Text>
+                )}
               </View>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.navButton, currentScreen === 'profile' && styles.navButtonActive]}
+              style={[styles.navButton, isProfileScreen && styles.navButtonActive]}
               onPress={handleNavigateToProfile}
               activeOpacity={0.7}
             >
               <Ionicons
                 name="person-circle-outline"
                 size={24}
-                color={currentScreen === 'profile' ? '#6c5ce7' : '#636e72'}
+                color={isProfileScreen ? '#6c5ce7' : '#636e72'}
               />
-              <Text
-                style={[
-                  styles.navButtonText,
-                  currentScreen === 'profile' && styles.navButtonTextActive,
-                ]}
-              >
-                Profile
-              </Text>
+              {isProfileScreen && (
+                <Text style={[styles.navButtonText, styles.navButtonTextActive]}>Profile</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>

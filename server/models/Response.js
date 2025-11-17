@@ -4,6 +4,7 @@ const ResponseSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   stage: { type: String, required: true },
   region: { type: String, required: true },
+  middleEastCountry: { type: String, required: false },
   sleepHours: { type: Number, required: true, default: 0 },
   appetite: { type: Boolean, required: true },
   mood: { type: Boolean, required: true },

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stage, Region, QuestionnaireResponse, QuestionnaireSubmission } from '../models/result';
-import { STAGES, REGIONS, QUESTIONS } from '../utils/constants';
+import { STAGES, REGIONS, QUESTIONS, MIDDLE_EAST_COUNTRIES } from '../utils/constants';
 import { OFFLINE_ERROR_CODE } from '../utils/api';
 
 interface QuestionnaireScreenProps {
@@ -27,6 +27,23 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
   const [questionnaireResponses, setQuestionnaireResponses] = useState<QuestionnaireResponse>({});
   const [showStageModal, setShowStageModal] = useState(false);
   const [showRegionModal, setShowRegionModal] = useState(false);
+  const [showCountryModal, setShowCountryModal] = useState(false);
+  const [middleEastCountry, setMiddleEastCountry] = useState('');
+
+  const isMiddleEastRegion = region === 'Middle East';
+
+  const handleRegionSelect = (selectedRegion: Region) => {
+    setRegion(selectedRegion);
+    setShowRegionModal(false);
+    if (selectedRegion !== 'Middle East') {
+      setMiddleEastCountry('');
+    }
+  };
+
+  const handleCountrySelect = (country: string) => {
+    setMiddleEastCountry(country);
+    setShowCountryModal(false);
+  };
 
   const handleQuestionChange = (questionId: string, value: boolean) => {
     setQuestionnaireResponses((prev) => ({
@@ -80,6 +97,15 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
       return;
     }
 
+    if (region === 'Middle East' && !middleEastCountry) {
+      Alert.alert(
+        'Missing Information',
+        'Please select your country within the Middle East region.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     const sleepHoursNum = parseFloat(sleepHours);
     if (isNaN(sleepHoursNum) || sleepHoursNum < 0 || sleepHoursNum > 24) {
       Alert.alert(
@@ -108,6 +134,7 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
       region: region as Region,
       sleepHours: sleepHoursNum,
       questionnaireResponses: { ...questionnaireResponses },
+      middleEastCountry: region === 'Middle East' ? middleEastCountry : undefined,
     };
 
     try {
@@ -116,17 +143,24 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
       setRegion('');
       setSleepHours('');
       setQuestionnaireResponses({});
+      setMiddleEastCountry('');
     } catch (error: any) {
       if (error?.message === OFFLINE_ERROR_CODE || error?.name === 'OfflineError') {
         setStage('');
         setRegion('');
         setSleepHours('');
         setQuestionnaireResponses({});
+        setMiddleEastCountry('');
       }
     }
   };
 
-  const isFormValid = stage && region && sleepHours;
+  const isFormValid = Boolean(
+    stage &&
+      region &&
+      sleepHours &&
+      (!isMiddleEastRegion || (isMiddleEastRegion && middleEastCountry))
+  );
 
   return (
     <View style={styles.container}>
@@ -179,6 +213,33 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
               </TouchableOpacity>
             </View>
           </View>
+
+          {isMiddleEastRegion && (
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>
+                Which country in Middle East region you belong <Text style={styles.required}>*</Text>
+              </Text>
+              <TouchableOpacity
+                style={[styles.selectButton, !middleEastCountry && styles.selectButtonEmpty]}
+                onPress={() => setShowCountryModal(true)}
+              >
+                <Text
+                  style={[
+                    styles.selectButtonText,
+                    !middleEastCountry && styles.selectButtonTextEmpty,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {middleEastCountry || 'Select'}
+                </Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={18}
+                  color={middleEastCountry ? '#6c5ce7' : '#999'}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.fieldContainer}>
             <Text style={styles.fieldLabel}>Sleep Hours (per day) <Text style={styles.required}>*</Text></Text>
@@ -347,10 +408,7 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
                 <TouchableOpacity
                   key={r}
                   style={[styles.modalOption, region === r && styles.modalOptionSelected]}
-                  onPress={() => {
-                    setRegion(r);
-                    setShowRegionModal(false);
-                  }}
+                  onPress={() => handleRegionSelect(r)}
                 >
                   <Ionicons 
                     name={region === r ? 'radio-button-on' : 'radio-button-off'} 
@@ -359,6 +417,53 @@ const QuestionnaireScreen: React.FC<QuestionnaireScreenProps> = ({ onSubmit, isS
                   />
                   <Text style={[styles.modalOptionText, region === r && styles.modalOptionTextSelected]}>
                     {r}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+      {/* Country Modal */}
+      <Modal
+        visible={showCountryModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCountryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Country</Text>
+              <TouchableOpacity
+                onPress={() => setShowCountryModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#636e72" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalOptionsContainer}>
+              {MIDDLE_EAST_COUNTRIES.map((country) => (
+                <TouchableOpacity
+                  key={country}
+                  style={[
+                    styles.modalOption,
+                    middleEastCountry === country && styles.modalOptionSelected,
+                  ]}
+                  onPress={() => handleCountrySelect(country)}
+                >
+                  <Ionicons
+                    name={middleEastCountry === country ? 'radio-button-on' : 'radio-button-off'}
+                    size={20}
+                    color={middleEastCountry === country ? '#6c5ce7' : '#999'}
+                  />
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      middleEastCountry === country && styles.modalOptionTextSelected,
+                    ]}
+                  >
+                    {country}
                   </Text>
                 </TouchableOpacity>
               ))}

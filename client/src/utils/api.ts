@@ -204,6 +204,7 @@ const mapFromBackendFormat = (backendResponse: any): AssessmentResult => {
     id: backendResponse._id || backendResponse.id,
     stage: backendResponse.stage,
     region: backendResponse.region,
+    middleEastCountry: backendResponse.middleEastCountry || undefined,
     sleepHours: backendResponse.sleepHours,
     questionnaireResponses,
     riskResult: backendResponse.resultLabel as 'Possible PPD Risk' | 'Low Risk',
@@ -229,6 +230,8 @@ const sendQuestionnaire = async (
       body: JSON.stringify({
         stage: submission.stage,
         region: submission.region,
+        middleEastCountry:
+          submission.region === 'Middle East' ? submission.middleEastCountry ?? null : null,
         sleepHours: submission.sleepHours,
         questionnaireResponses: submission.questionnaireResponses,
       }),

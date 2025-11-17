@@ -21,6 +21,7 @@ export interface QuestionnaireSubmission {
   region: Region;
   sleepHours: number;
   questionnaireResponses: QuestionnaireResponse;
+  middleEastCountry?: string;
 }
 
 export interface AuthUser {
@@ -48,5 +49,6 @@ export interface AssessmentResult {
   modelVersion?: string;
   riskBreakdown?: { [questionId: string]: number };
   timestamp: Date;
+  middleEastCountry?: string;
 }
 

@@ -8,11 +8,23 @@ export const STAGES: Stage[] = [
 ];
 
 export const REGIONS: Region[] = [
+  'Middle East',
   'North',
   'South',
   'East',
   'West',
   'Central',
+];
+
+export const MIDDLE_EAST_COUNTRIES = [
+  'Egypt',
+  'Oman',
+  'Jordan',
+  'Iraq',
+  'Saudi Arabia',
+  'Kuwait',
+  'Bahrain',
+  'Qatar',
 ];
 
 export const QUESTIONS = [

@@ -21,8 +21,16 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
   const maxScore = result.maxScore || QUESTIONS.length;
   const isRisk = result.riskResult === 'Possible PPD Risk';
   const scorePercentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
-  const riskFactorLabels =
-    result.riskFactors?.map((questionId) => QUESTION_LABELS[questionId] || questionId) || [];
+  const riskFactorIds =
+    (result.riskFactors && result.riskFactors.length > 0
+      ? result.riskFactors
+      : result.riskBreakdown
+      ? Object.keys(result.riskBreakdown)
+      : []) || [];
+  const uniqueRiskFactorIds = Array.from(new Set(riskFactorIds));
+  const riskFactorLabels = uniqueRiskFactorIds.map(
+    (questionId) => QUESTION_LABELS[questionId] || questionId
+  );
 
   return (
     <View style={styles.container}>
@@ -109,6 +117,15 @@ const DetailedResultScreen: React.FC<DetailedResultScreenProps> = ({ result, onB
                 <Text style={styles.infoValue}>{formatTime(result.timestamp)}</Text>
               </View>
             </View>
+            {result.middleEastCountry && (
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <Ionicons name="earth-outline" size={18} color="#636e72" />
+                  <Text style={styles.infoLabel}>Middle East Country</Text>
+                  <Text style={styles.infoValue}>{result.middleEastCountry}</Text>
+                </View>
+              </View>
+            )}
           </View>
         </View>
 

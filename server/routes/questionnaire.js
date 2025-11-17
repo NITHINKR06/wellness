@@ -15,6 +15,16 @@ router.post(
   [
     body('stage').notEmpty().withMessage('Stage is required'),
     body('region').notEmpty().withMessage('Region is required'),
+    body('middleEastCountry').custom((value, { req }) => {
+      if (req.body.region === 'Middle East') {
+        if (!value || typeof value !== 'string') {
+          throw new Error('Middle East country is required and must be a string when region is Middle East');
+        }
+      } else if (value && typeof value !== 'string') {
+        throw new Error('Middle East country must be a string');
+      }
+      return true;
+    }),
     body('sleepHours').isNumeric().withMessage('Sleep hours must be a number'),
     body('questionnaireResponses')
       .isObject()
@@ -41,7 +51,9 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { stage, region, sleepHours, questionnaireResponses } = req.body;
+      const { stage, region, sleepHours, questionnaireResponses, middleEastCountry } = req.body;
+      const normalizedCountry =
+        typeof middleEastCountry === 'string' ? middleEastCountry.trim() : undefined;
 
       const {
         score,
@@ -76,6 +88,7 @@ router.post(
         stage,
         region,
         sleepHours: parseFloat(sleepHours),
+        middleEastCountry: region === 'Middle East' ? normalizedCountry : undefined,
         appetite,
         mood,
         support: supportValue,

@@ -38,7 +38,10 @@ const getApiBaseUrl = () => {
     }
   }
   // Production URL - update this with your actual production API URL
-  return 'https://your-production-api.com/api';
+  // For now, using the same local IP for production builds
+  // TODO: Replace with your actual production API URL
+  // You can also use environment variables via EAS Build secrets
+  return `http://${LOCAL_IP_ADDRESS}:4000/api`;
 };
 
 const API_BASE_URL = getApiBaseUrl();

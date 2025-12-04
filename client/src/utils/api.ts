@@ -23,6 +23,11 @@ import {
 const USE_EMULATOR = false;
 const LOCAL_IP_ADDRESS = '192.168.0.109';
 
+// Production API URL - Replace with your Render backend URL
+// Example: 'https://wellness-backend.onrender.com/api'
+// You can also set this via EAS Build environment variables
+const PRODUCTION_API_URL = 'https://wellness-backend-mte0.onrender.com/api';
+
 const getApiBaseUrl = () => {
   if (__DEV__) {
     // Development mode
@@ -37,11 +42,8 @@ const getApiBaseUrl = () => {
       return 'http://localhost:4000/api';
     }
   }
-  // Production URL - update this with your actual production API URL
-  // For now, using the same local IP for production builds
-  // TODO: Replace with your actual production API URL
-  // You can also use environment variables via EAS Build secrets
-  return `http://${LOCAL_IP_ADDRESS}:4000/api`;
+  // Production mode - uses Render backend URL
+  return PRODUCTION_API_URL;
 };
 
 const API_BASE_URL = getApiBaseUrl();

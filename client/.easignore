@@ -1,0 +1,81 @@
+# Dependencies (will be installed during build)
+node_modules/
+**/node_modules/
+yarn.lock
+package-lock.json
+
+# Native folders - exclude entire android folder for Prebuild/CNG
+/android
+
+# Build artifacts (if android folder is kept)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/.cxx/
+android/.idea/
+android/app/debug.keystore
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Development files
+.expo/
+.expo-shared/
+dist/
+web-build/
+
+# Documentation
+*.md
+!README.md
+ppt.md
+working.md
+NETWORK_GUIDE.md
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Test files
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Coverage
+coverage/
+.nyc_output/
+
